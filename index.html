@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Як? — Просто про важливе в Україні</title>
+  <meta name="description" content="Життєвий гід: покрокові інструкції для повсякденних питань в Україні.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&subset=cyrillic&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip" href="#app">До основного вмісту</a>
+  <header class="header" id="header">
+    <div class="container bar-row">
+      <a class="logo" href="#/" aria-label="Як? — на головну"><span class="logo-t">Як</span><span class="logo-q">?</span></a>
+      <nav class="nav" id="nav" aria-label="Головне меню">
+        <a href="#/topics">Усі теми</a>
+        <a href="#/events">Життєві події</a>
+        <a href="#/popular">Популярні питання</a>
+        <a href="#/about">Про проєкт</a>
+        <a href="#/saved" class="saved-link"><i data-lucide="bookmark" aria-hidden="true"></i>Збережене <b id="savedCount" hidden>0</b></a>
+      </nav>
+      <button class="burger" id="burger" type="button" aria-label="Меню" aria-expanded="false" aria-controls="nav">
+        <i data-lucide="menu" class="b-open"></i><i data-lucide="x" class="b-close"></i>
+      </button>
+    </div>
+  </header>
+  <main id="app" tabindex="-1"></main>
+  <footer class="footer">
+    <div class="container foot-row">
+      <span>Як? — демонстраційний прототип. Матеріали не є юридичною консультацією.</span>
+      <span class="foot-links"><a href="#/about">Про проєкт</a><a href="#/topics">Усі теми</a><a href="#/events">Життєві події</a><a href="#/saved">Збережене</a></span>
+    </div>
+  </footer>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="lib/lucide.min.js"></script>
+  <script src="data.js"></script>
+  <script src="guide-meta.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
