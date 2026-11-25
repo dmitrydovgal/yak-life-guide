@@ -545,8 +545,8 @@
     const wayObj = plan.ways.find(w => w.id === way);
     const steps = svcSteps(s, { sid, st: plan.needsPlace ? st : {}, way, variant });
     const prov = s.v[0] ? shorten(s.v[0], 70) : '';
-    const cta = way === 'online' ? (s.l ? extLink('Відкрити сервіс', s.l, 'btn primary big') : extLink('Відкрити портал Дія', 'https://diia.gov.ua/services', 'btn primary big'))
-      : `<a class="btn primary big" href="${mapUrl((prov || 'ЦНАП') + (st.city ? ' ' + st.city : ''))}" target="_blank" rel="noopener noreferrer">Знайти орган на карті${ic('map-pin')}</a>`;
+    const cta = way === 'online' ? (s.l ? extLink('Відкрити сервіс', s.l, 'btn primary btn-lg') : extLink('Відкрити портал Дія', 'https://diia.gov.ua/services', 'btn primary btn-lg'))
+      : `<a class="btn primary btn-lg" href="${mapUrl((prov || 'ЦНАП') + (st.city ? ' ' + st.city : ''))}" target="_blank" rel="noopener noreferrer">Знайти орган на карті${ic('map-pin')}</a>`;
     const summary = [`Послуга: ${s.n}`, st.name && plan.needsAddr ? `Заявник: ${st.name}` : '', plan.needsPlace && svcAddrLine(st) ? `Адреса: ${svcAddrLine(st)}` : '', `Спосіб: ${wayObj.label}`, variant ? `Варіант: ${variant.label}` : '', time ? `Строк: ${time}` : '', cost ? `Вартість: ${cost}` : '', s.i.length ? 'Документи:\n- ' + s.i.join('\n- ') : ''].filter(Boolean).join('\n');
     const answers = [plan.needsPlace && st.city ? [`Місто: ${st.city}`, `${base}/place`] : null, plan.needsAddr ? [svcAddrLine(st), `${base}/addr`] : null, plan.steps.includes('choice') ? [`${wayObj.label}${variant ? ' · ' + variant.label : ''}`, `${base}/choice`] : null].filter(Boolean);
     mount(`<div class="addr">${ic('map-pin')}<span><b>Ваша інструкція.</b> ${esc(answers.map(a => a[0]).join(' | ') || 'Для всієї України')}</span>${answers.length ? `<a href="${answers[0][1]}">Змінити</a>` : ''}</div>
@@ -640,7 +640,7 @@
     const all = pre.concat(steps);
     const answers = [plan.place && city ? [plan.addr ? svcAddrLine(st) : 'Місто: ' + city, `${base}/${plan.addr ? 'addr' : 'place'}`] : null, opt ? [opt.label, `${base}/choice`] : null].filter(Boolean);
     const summary = [`Інструкція: ${base0.title}`, opt ? `Ситуація: ${opt.label}` : '', plan.place && city ? `Адреса: ${plan.addr ? svcAddrLine(st) : city}` : '', plan.addr && st.name ? `Заявник: ${st.name}` : '', `Орієнтовний час: ${ins.time}`, ins.needs.length ? 'Документи:\n- ' + ins.needs.join('\n- ') : ''].filter(Boolean).join('\n');
-    const cta = m.where && city ? `<a class="btn primary big" href="${mapUrl(m.where + ' ' + city)}" target="_blank" rel="noopener noreferrer">Знайти ${esc(m.where)} на карті${ic('map-pin')}</a>` : (ins.links[0] ? extLink('Відкрити: ' + ins.links[0][0], ins.links[0][1], 'btn primary big') : '');
+    const cta = m.where && city ? `<a class="btn primary btn-lg" href="${mapUrl(m.where + ' ' + city)}" target="_blank" rel="noopener noreferrer">Знайти ${esc(m.where)} на карті${ic('map-pin')}</a>` : (ins.links[0] ? extLink('Відкрити: ' + ins.links[0][0], ins.links[0][1], 'btn primary btn-lg') : '');
     mount(`${answers.length ? `<div class="addr">${ic('map-pin')}<span><b>Ваша інструкція.</b> ${esc(answers.map(x => x[0]).join(' | '))}</span><a href="${answers[0][1]}">Змінити</a></div>` : ''}
       ${ins.why ? `<div class="why">${ic('lightbulb')}<p><b>Чому спершу так.</b> ${esc(ins.why)}</p></div>` : ''}
       <section><h2 class="h2">Що знадобиться</h2><ul class="docs">${ins.needs.map(n => `<li>${ic('file-text')}<span>${esc(n)}</span></li>`).join('')}</ul></section>
