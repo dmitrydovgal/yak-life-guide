@@ -91,7 +91,7 @@ def article_page(a):
         int_html = '<h2 id="related">Читайте також</h2><ul class="related">' + ''.join(f'<li><a href="../{r["slug"]}/">{e(r["title"])}</a></li>' for r in rel) + '</ul>'
     disc = a.get('disclaimer') or 'Матеріал має інформаційний характер, не є юридичною консультацією й може не враховувати останні зміни. Перед діями перевіряйте актуальну інформацію в офіційних джерелах.'
     body = f'''<article class="container post" itemscope itemtype="https://schema.org/Article">
-<nav class="crumbs" aria-label="Навігація"><ol><li><a href="../../">Головна</a><span class="sep">›</span></li><li><a href="../">Блог</a><span class="sep">›</span></li><li><span aria-current="page">{e(a["cat"])}</span></li></ol></nav>
+<nav class="crumbs" aria-label="Навігація"><ol><li><a href="../../">Головна</a><span class="sep">›</span></li><li><a href="../">Блог</a><span class="sep">›</span></li><li><span aria-current="page" title="{e(a["title"])}">{e(a["title"])}</span></li></ol></nav>
 <p class="post-cat">{e(a["cat"])}</p>
 <h1 itemprop="headline">{e(a["title"])}</h1>
 <p class="post-meta">Опубліковано: <time datetime="{DATE}" itemprop="datePublished">{human(DATE)}</time> · Посилання перевірено: <time datetime="{DATE}" itemprop="dateModified">{human(DATE)}</time> · {a["min"]} хв читання</p>
@@ -125,10 +125,30 @@ def article_page(a):
 
 def index_page():
     url = SITE + 'blog/'
-    cards = ''.join(f'''<li><a class="post-card" href="{a["slug"]}/"><span class="post-cat">{e(a["cat"])}</span><b>{e(a["title"])}</b><span class="pc-d">{e(a["desc"])}</span><small>{human(DATE)} · {a["min"]} хв читання</small></a></li>''' for a in ARTICLES)
-    body = f'''<div class="container"><nav class="crumbs" aria-label="Навігація"><ol><li><a href="../">Головна</a><span class="sep">›</span></li><li><span aria-current="page">Блог</span></li></ol></nav>
+    cats = []
+    for a in ARTICLES:
+        if a['cat'] not in cats: cats.append(a['cat'])
+    def hay(a):
+        return ' '.join([a['title'], a['desc'], a['cat']] + a.get('short', [])).lower()
+    cards = ''.join(f'''<li class="bcard" data-cat="{e(a["cat"])}" data-s="{e(hay(a))}"><a class="post-card" href="{a["slug"]}/"><span class="post-cat">{e(a["cat"])}</span><b>{e(a["title"])}</b><span class="pc-d">{e(a["desc"])}</span><small>{human(DATE)} · {a["min"]} хв читання</small></a></li>''' for a in ARTICLES)
+    chips = '<button type="button" class="chip on" data-cat="">Усі</button>' + ''.join(f'<button type="button" class="chip" data-cat="{e(c)}">{e(c)}</button>' for c in cats)
+    script = """<script>(function(){
+var q=document.getElementById('bq'),cards=[].slice.call(document.querySelectorAll('.bcard')),chips=[].slice.call(document.querySelectorAll('#bchips .chip')),empty=document.getElementById('bempty'),cnt=document.getElementById('bcount'),cat='';
+function norm(t){return String(t).toLowerCase().replace(/[ʼ'`’]/g,'').replace(/ё/g,'е').replace(/ы/g,'и').replace(/э/g,'е')}
+function run(){var t=norm(q.value).split(/\s+/).filter(Boolean),n=0;
+cards.forEach(function(c){var h=norm(c.getAttribute('data-s')),ok=(!cat||c.getAttribute('data-cat')===cat)&&t.every(function(w){return h.indexOf(w)>-1});c.hidden=!ok;if(ok)n++});
+empty.hidden=n>0;cnt.textContent=n===cards.length&&!t.length&&!cat?'':'Знайдено: '+n}
+q.addEventListener('input',run);document.getElementById('bform').addEventListener('submit',function(e){e.preventDefault();run()});
+document.getElementById('bclear').addEventListener('click',function(){q.value='';cat='';chips.forEach(function(c){c.classList.toggle('on',!c.getAttribute('data-cat'))});run();q.focus()});
+chips.forEach(function(b){b.addEventListener('click',function(){cat=b.getAttribute('data-cat');chips.forEach(function(c){c.classList.toggle('on',c===b)});run()})})})();</script>"""
+    body = f'''<div class="container blog-head"><nav class="crumbs" aria-label="Навігація"><ol><li><a href="../">Головна</a><span class="sep">›</span></li><li><span aria-current="page">Блог</span></li></ol></nav>
 <div class="page-head" style="padding-top:8px"><h1>Блог</h1><p class="lead">Прості пояснення про важливе: як оплатити комуналку, відкрити ФОП, оформити документи та діяти в складних життєвих ситуаціях.</p></div>
-<ul class="blog-grid">{cards}</ul></div>'''
+<form class="searchbox plain" id="bform" role="search" autocomplete="off"><svg class="lead" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="bq" type="search" placeholder="Пошук по статтях, наприклад «ФОП» або «комуналка»" aria-label="Пошук по статтях"></form>
+<div class="chips" id="bchips">{chips}</div>
+<p class="muted" id="bcount" aria-live="polite"></p>
+<ul class="blog-grid">{cards}</ul>
+<div class="empty" id="bempty" hidden><h3>Нічого не знайдено</h3><p>Спробуйте інші слова або скиньте фільтри.</p><button type="button" class="btn ghost" id="bclear">Скинути пошук</button></div>
+</div>{script}'''
     ld = {'@context': 'https://schema.org', '@type': 'Blog', 'name': 'Блог «Як?»', 'url': url, 'inLanguage': 'uk',
           'blogPost': [{'@type': 'BlogPosting', 'headline': a['title'], 'url': f'{url}{a["slug"]}/', 'datePublished': DATE} for a in ARTICLES]}
     extra = f'<script type="application/ld+json">{json.dumps(ld, ensure_ascii=False)}</script>'

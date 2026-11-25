@@ -365,3 +365,11 @@ a.kp:hover i{background:#d2e3fc}
 .source{font-size:13px;color:var(--tx2)}
 @media (max-width:560px){.kv{grid-template-columns:1fr}.kv dt{margin-top:6px}}
 .svc-why.warn{background:#fffbf0;color:#5f4b00}.svc-why.warn i{color:#b06000}
+/* static breadcrumbs */
+.post .crumbs,.blog-head .crumbs{padding-top:26px}
+.crumbs span.sep{margin:0 8px;color:var(--tx2)}
+.crumbs li{min-width:0}
+.crumbs li:last-child span{display:inline-block;max-width:min(60ch,70vw);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:bottom}
+.blog-head #bform{margin-bottom:14px}
+.blog-head input[type=search]{flex:1;border:0;outline:0;font:inherit;font-size:16px;background:transparent;min-width:0;height:100%}
+[hidden]{display:none!important}
