@@ -84,7 +84,7 @@ ARTICLES = [
  'title': 'Яку групу ФОП обрати: на що дивитися перед реєстрацією',
  'desc': 'Прості критерії вибору групи оподаткування для ФОП: вид діяльності, дохід, працівники. Як не помилитися й де перевірити актуальні ліміти.',
  'cat': 'ФОП і податки', 'min': 5, 'cta': ('fop-group', 'Дізнатися, як обрати групу'),
- 'related': ['yak-vidkryty-fop-online-2026'],
+ 'related': ['yak-vidkryty-fop-online-2026', 'yak-zakryty-fop-2026', 'deklaratsiya-dohodiv-fiz-osoby'],
  'src': ['tax', 'cabinet'],
  'lead': 'Група оподаткування визначає, скільки податків ви сплачуєте й які правила маєте виконувати. Вибір залежить від кількох простих речей, і їх варто оцінити до реєстрації.',
  'blocks': [
@@ -108,7 +108,7 @@ ARTICLES = [
  'title': 'Що робити після смерті близької людини: порядок дій і документи',
  'desc': 'Покрокове пояснення, що робити відразу після смерті родича: хто констатує смерть, де отримати свідоцтво, як організувати похорон і не пропустити строки для спадщини.',
  'cat': 'Сімʼя і життєві ситуації', 'min': 6, 'cta': ('death-relative', 'Отримати інструкцію для моєї ситуації'),
- 'related': ['yak-pereviryty-kvartyru-pered-kupivleiu'],
+ 'related': ['yak-pereviryty-kvartyru-pered-kupivleiu', 'pereviryty-pravo-vlasnosti-kvartyra', 'borh-za-komunalku'],
  'src': ['minjust', 'diia', 'msp'],
  'lead': 'Це складний час, коли важко зібратися з думками. Ми зібрали порядок дій у короткий список, щоб було простіше нічого не пропустити.',
  'blocks': [
@@ -238,5 +238,6 @@ ARTICLES = [
 
 
 from articles_new import NEW
+from articles_batch2 import NEW2
 _OLD_REPLACED = ('yak-oplatyty-komunalni-poslugy-onlain', 'yak-vidkryty-fop-onlain')
-ARTICLES = NEW + [a for a in ARTICLES if a['slug'] not in _OLD_REPLACED]
+ARTICLES = NEW + NEW2 + [a for a in ARTICLES if a['slug'] not in _OLD_REPLACED]

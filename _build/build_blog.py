@@ -71,6 +71,11 @@ def render_blocks(blocks):
         elif k == 'note': out.append(f'<p class="callout">{e(v)}</p>')
     return '\n'.join(out), toc
 
+def cta_href(cid):
+    k, _, v = cid.partition(':')
+    if not v: return 'i/' + cid
+    return {'c': 'c/', 'e': 'e/', 'i': 'i/'}.get(k, '') + v if k != 's' else f's/{v}/-'
+
 def article_page(a):
     depth = 2
     url = f'{SITE}blog/{a["slug"]}/'
@@ -79,10 +84,10 @@ def article_page(a):
     short_html = '<aside class="short"><b>Коротко</b><ul>' + ''.join(f'<li>{e(x)}</li>' for x in a['short']) + '</ul></aside>' if a.get('short') else ''
     lead_html = f'<p class="post-lead">{e(a["lead"])}</p>' if a.get('lead') else ''
     faq_html = ('<h2 id="faq">Часті запитання</h2>' + ''.join(f'<details><summary>{e(q)}</summary><p>{e(ans)}</p></details>' for q, ans in a['faq'])) if a.get('faq') else ''
-    srcs = a.get('sources') or [SRC[k] for k in a['src']]
-    src_html = '<h2 id="sources">Офіційні та корисні джерела</h2><ul>' + ''.join((f'<li>{e(l)}: <a href="{u}" target="_blank" rel="noopener noreferrer">{e(u)}</a></li>' if u else f'<li>{e(l)}</li>') for l, u in srcs) + '</ul>'
+    srcs = a['sources'] if 'sources' in a else [SRC[k] for k in a['src']]
+    src_html = ('<h2 id="sources">Офіційні та корисні джерела</h2><ul>' if srcs else '') + ''.join((f'<li>{e(l)}: <a href="{u}" target="_blank" rel="noopener noreferrer">{e(u)}</a></li>' if u else f'<li>{e(l)}</li>') for l, u in srcs) + ('</ul>' if srcs else '')
     cta_id, cta_text, cta_btn = (a['cta'] + (None,))[:3] if len(a['cta']) == 3 else (a['cta'][0], 'Відповімо на кілька запитань і покажемо кроки саме для вас.', a['cta'][1])
-    cta = f'<aside class="cta-box"><b>Покрокова інструкція під вашу ситуацію</b><p>{e(cta_text)}</p><a class="btn primary" href="../../#/i/{cta_id}">{e(cta_btn)}</a></aside>'
+    cta = f'<aside class="cta-box"><b>Покрокова інструкція під вашу ситуацію</b><p>{e(cta_text)}</p><a class="btn primary" href="../../#/{cta_href(cta_id)}">{e(cta_btn)}</a></aside>'
     int_html = ''
     if a.get('internal'):
         int_html = '<h2 id="related">Читайте також</h2><ul class="related">' + ''.join(f'<li><a href="{u}">{e(t)}</a></li>' for t, u in a['internal']) + '</ul>'
@@ -90,15 +95,15 @@ def article_page(a):
         rel = [BY_SLUG[s] for s in a['related'] if s in BY_SLUG]
         int_html = '<h2 id="related">Читайте також</h2><ul class="related">' + ''.join(f'<li><a href="../{r["slug"]}/">{e(r["title"])}</a></li>' for r in rel) + '</ul>'
     disc = a.get('disclaimer') or 'Матеріал має інформаційний характер, не є юридичною консультацією й може не враховувати останні зміни. Перед діями перевіряйте актуальну інформацію в офіційних джерелах.'
-    body = f'''<article class="container post" itemscope itemtype="https://schema.org/Article">
+    body = f'''<article class="container post">
 <nav class="crumbs" aria-label="Навігація"><ol><li><a href="../../">Головна</a><span class="sep">›</span></li><li><a href="../">Блог</a><span class="sep">›</span></li><li><span aria-current="page" title="{e(a["title"])}">{e(a["title"])}</span></li></ol></nav>
 <p class="post-cat">{e(a["cat"])}</p>
-<h1 itemprop="headline">{e(a["title"])}</h1>
-<p class="post-meta">Опубліковано: <time datetime="{DATE}" itemprop="datePublished">{human(DATE)}</time> · Посилання перевірено: <time datetime="{DATE}" itemprop="dateModified">{human(DATE)}</time> · {a["min"]} хв читання</p>
+<h1>{e(a["title"])}</h1>
+<p class="post-meta">Опубліковано: <time datetime="{DATE}">{human(DATE)}</time> · Посилання перевірено: <time datetime="{DATE}">{human(DATE)}</time> · {a["min"]} хв читання</p>
 {lead_html}
 {short_html}
 {toc_html}
-<div itemprop="articleBody">{body_html}</div>
+<div>{body_html}</div>
 {cta}
 {faq_html}
 {src_html}
@@ -107,7 +112,7 @@ def article_page(a):
 <p class="callout">Інформація може змінюватися: перед діями перевіряйте актуальні умови на офіційних сайтах і за потреби оновлюйте дані.</p>
 </article>'''
     ld = [{
-        '@context': 'https://schema.org', '@type': 'Article', 'headline': a['title'], 'description': a['desc'], 'inLanguage': 'uk',
+        '@context': 'https://schema.org', '@type': 'BlogPosting', 'headline': a['title'], 'description': a['desc'], 'inLanguage': 'uk',
         'datePublished': DATE, 'dateModified': DATE, 'mainEntityOfPage': url,
         'author': {'@type': 'Organization', 'name': 'Як? — Життєвий гід'}, 'publisher': {'@type': 'Organization', 'name': 'Як? — Життєвий гід'}
     }, {
@@ -132,7 +137,7 @@ def index_page():
         return ' '.join([a['title'], a['desc'], a['cat']] + a.get('short', [])).lower()
     cards = ''.join(f'''<li class="bcard" data-cat="{e(a["cat"])}" data-s="{e(hay(a))}"><a class="post-card" href="{a["slug"]}/"><span class="post-cat">{e(a["cat"])}</span><b>{e(a["title"])}</b><span class="pc-d">{e(a["desc"])}</span><small>{human(DATE)} · {a["min"]} хв читання</small></a></li>''' for a in ARTICLES)
     chips = '<button type="button" class="chip on" data-cat="">Усі</button>' + ''.join(f'<button type="button" class="chip" data-cat="{e(c)}">{e(c)}</button>' for c in cats)
-    script = """<script>(function(){
+    script = r"""<script>(function(){
 var q=document.getElementById('bq'),cards=[].slice.call(document.querySelectorAll('.bcard')),chips=[].slice.call(document.querySelectorAll('#bchips .chip')),empty=document.getElementById('bempty'),cnt=document.getElementById('bcount'),cat='';
 function norm(t){return String(t).toLowerCase().replace(/[ʼ'`’]/g,'').replace(/ё/g,'е').replace(/ы/g,'и').replace(/э/g,'е')}
 function run(){var t=norm(q.value).split(/\s+/).filter(Boolean),n=0;

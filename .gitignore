@@ -1,3 +1,4 @@
 .claude/
 _build/registry.json
 *.png
+_build/__pycache__/
