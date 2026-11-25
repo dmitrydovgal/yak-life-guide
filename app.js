@@ -185,7 +185,9 @@
       <section class="container home-lists">
         <div><h2 class="h2">Популярні запитання</h2><ul class="qlist">${POPULAR_Q.map(([q, id]) => `<li><a href="#/i/${id}">${ic('circle-help')}<span>${esc(q)}</span></a></li>`).join('')}</ul></div>
         <div><h2 class="h2">Найбільш затребувані інструкції</h2><ol class="toplist">${pop.map((x, i) => `<li><a href="#/i/${x.id}"><span class="rank">${i + 1}</span><span class="tl-main"><b>${esc(x.title)}</b><small>${esc(catById(x.cat).title)} · ${esc(x.time)}</small></span>${ic('chevron-right', 'chev')}</a></li>`).join('')}</ol></div>
-      </section>`;
+      </section>
+      <section class="container home-blog"><div class="h2-row"><h2 class="h2">З блогу</h2><a href="blog/">Усі статті</a></div>
+        <ul class="blog-grid">${BLOG.slice(0, 3).map(b => `<li><a class="post-card" href="blog/${b.slug}/"><span class="post-cat">${esc(b.cat)}</span><b>${esc(b.title)}</b><small>${b.min} хв читання</small></a></li>`).join('')}</ul></section>`;
     bindSearch('#homeSearch');
   }
 
@@ -417,6 +419,72 @@
     return out;
   }
 
+    /* --- Крок: місто (спільний) --- */
+  function stepPlace({ st, mount, actions, go, nextK }) {
+      let picked = st.city || '';
+      mount(`<h2 class="h2">Оберіть ваше місто</h2><p class="muted sp">Від міста залежить, до якого органу звертатися. Підійде будь-яке місто чи село України.</p>
+        <form id="f" novalidate autocomplete="off">
+        <div class="field"><label for="city">Місто або село</label><div class="searchbox plain">${ic('map-pin', 'lead')}<input id="city" type="text" value="${esc(picked)}" placeholder="Почніть вводити назву" aria-describedby="cerr" /></div><p class="err" id="cerr" hidden></p></div>
+        <p class="small-label">Приклади</p><div class="chips" id="ex">${['Київ', 'Кривий Ріг', 'Дніпро', 'Львів', 'Одеса', 'Харків'].map(c => `<button type="button" class="chip${c === picked ? ' on' : ''}" data-c="${c}">${c}</button>`).join('')}</div>
+        <ul class="cities" id="cl"></ul>${actions('Продовжити')}</form>`);
+      const inp = $('#city'), err = $('#cerr');
+      const drawList = () => {
+        const q = norm(inp.value.trim());
+        const res = q ? CITIES.filter(c => norm(c[0]).includes(q) && c[0] !== inp.value.trim()).slice(0, 6) : [];
+        $('#cl').innerHTML = res.map(c => `<li><button type="button" data-c="${c[0]}">${ic('map-pin', 'sm')}<span>${c[0]}</span><small>${c[1] === 'м. Київ' ? 'місто' : c[1] + ' обл.'}</small></button></li>`).join('');
+        lucide.createIcons();
+      };
+      const pick = c => { inp.value = c; err.hidden = true; inp.classList.remove('bad'); $$('#ex .chip').forEach(b => b.classList.toggle('on', b.dataset.c === c)); drawList(); };
+      inp.addEventListener('input', () => { err.hidden = true; inp.classList.remove('bad'); $$('#ex .chip').forEach(b => b.classList.toggle('on', b.dataset.c === inp.value.trim())); drawList(); });
+      $('#f').addEventListener('click', e => { const b = e.target.closest('[data-c]'); if (b) pick(b.dataset.c); });
+      $('#f').addEventListener('submit', e => {
+        e.preventDefault();
+        const v = inp.value.trim().replace(/\s+/g, ' ');
+        const msg = !v ? 'Вкажіть ваше місто.' : v.length < 2 ? 'Назва занадто коротка.' : !/^[A-Za-zА-Яа-яІіЇїЄєҐґ'’ʼ.\-\s]+$/.test(v) ? 'Використовуйте лише літери, пробіли та дефіс.' : '';
+        if (msg) { err.textContent = msg; err.hidden = false; inp.classList.add('bad'); inp.focus(); return; }
+        const known = CITIES.find(c => c[0].toLowerCase() === v.toLowerCase());
+        const ns = Object.assign({}, st);
+        if (known) { if (ns.city !== known[0]) { ns.city = known[0]; ns.oblast = known[1]; } }
+        else if (ns.city !== v) { ns.city = v; ns.oblast = ''; }
+        kSave(ns); go(nextK);
+      });
+      return;
+    }
+
+
+    /* --- Крок: адреса і дані заявника --- */
+  function stepAddr({ st, mount, actions, go, nextK }) {
+      mount(`<h2 class="h2">Вкажіть адресу</h2><p class="muted sp">Адреса потрібна, щоб підставити її в інструкцію. Дані зберігаються лише у вашому браузері.</p>
+        <form id="f" novalidate autocomplete="off">
+        <div class="grid2"><div class="field"><label for="oblast">Область</label><select id="oblast"><option value="">Оберіть область</option>${OBLASTS.map(o => `<option${o === st.oblast ? ' selected' : ''}>${o}</option>`).join('')}</select><p class="err" hidden></p></div>
+        <div class="field"><label for="fcity">Місто</label><input id="fcity" type="text" value="${esc(st.city || '')}" /><p class="err" hidden></p></div></div>
+        <div class="field"><label for="street">Вулиця</label><input id="street" type="text" placeholder="Наприклад, Соборна" value="${esc(st.street || '')}" /><p class="err" hidden></p></div>
+        <div class="grid2"><div class="field"><label for="house">Будинок</label><input id="house" type="text" placeholder="Наприклад, 12А" value="${esc(st.house || '')}" /><p class="err" hidden></p></div>
+        <div class="field"><label for="flat">Квартира <span class="opt-l">необовʼязково</span></label><input id="flat" type="text" inputmode="numeric" placeholder="Наприклад, 45" value="${esc(st.flat || '')}" /><p class="err" hidden></p></div></div>
+        <div class="field"><label for="name">Ваше імʼя для заяви <span class="opt-l">необовʼязково</span></label><input id="name" type="text" placeholder="Прізвище Імʼя По батькові" value="${esc(st.name || '')}" /><p class="err" hidden></p>
+        <p class="muted sp2">Не обовʼязково. Імʼя лише підставляється в інструкцію й нікуди не надсилається.</p></div>
+        ${actions('Показати інструкцію', 'list-checks')}</form>`);
+      const L = "A-Za-zА-Яа-яІіЇїЄєҐґ'’ʼ";
+      const rules = {
+        oblast: v => v ? '' : 'Оберіть область.',
+        fcity: v => v.length < 2 ? 'Вкажіть місто.' : '',
+        street: v => v.length < 2 ? 'Вкажіть назву вулиці.' : /^[\d\s]+$/.test(v) ? 'Вулиця не може складатися лише з цифр.' : '',
+        house: v => !v ? 'Вкажіть номер будинку.' : /^\d{1,4}\s?[А-Яа-яІіЇїЄєҐґA-Za-z]?(\/\d{1,3})?(-[А-Яа-яІіЇїЄєҐґA-Za-z0-9]{1,3})?$/.test(v) ? '' : 'Вкажіть номер у форматі 12, 12А або 12/2.',
+        flat: v => !v || /^\d{1,4}$/.test(v) ? '' : 'Номер квартири: лише цифри.',
+        name: v => !v || new RegExp(`^[${L}.\\-\\s]{2,80}$`).test(v) ? '' : 'Використовуйте лише літери, пробіли та дефіс.'
+      };
+      const check = id => { const el = $('#' + id), m = rules[id](el.value.trim()), p = el.parentElement.querySelector('.err'); p.textContent = m; p.hidden = !m; el.classList.toggle('bad', !!m); return !m; };
+      Object.keys(rules).forEach(id => { const el = $('#' + id); el.addEventListener('blur', () => check(id)); el.addEventListener('input', () => { if (el.classList.contains('bad')) check(id); }); });
+      $('#f').addEventListener('submit', e => {
+        e.preventDefault();
+        if (!Object.keys(rules).map(check).every(Boolean)) { const b = $('.bad'); if (b) b.focus(); return; }
+        kSave({ oblast: $('#oblast').value, city: $('#fcity').value.trim(), street: $('#street').value.trim(), house: $('#house').value.trim(), flat: $('#flat').value.trim(), name: $('#name').value.trim().replace(/\s+/g, ' ') });
+        go(nextK);
+      });
+      return;
+    }
+
+
   async function pageService(sid, eid, step) {
     const tok = routeTok;
     app.innerHTML = loadingHtml; lucide.createIcons();
@@ -449,69 +517,8 @@
     const go = k => { location.hash = `${base}/${k}`; };
     const mount = html => { app.innerHTML = `<article class="container narrow-m">${head}${html}</article>`; lucide.createIcons(); refreshSaveUI(); };
 
-    /* --- Крок: місто --- */
-    if (cur === 'place') {
-      let picked = st.city || '';
-      mount(`<h2 class="h2">Оберіть ваше місто</h2><p class="muted sp">Від міста залежить, до якого органу звертатися. Підійде будь-яке місто чи село України.</p>
-        <form id="f" novalidate autocomplete="off">
-        <div class="field"><label for="city">Місто або село</label><div class="searchbox plain">${ic('map-pin', 'lead')}<input id="city" type="text" value="${esc(picked)}" placeholder="Почніть вводити назву" aria-describedby="cerr" /></div><p class="err" id="cerr" hidden></p></div>
-        <p class="small-label">Приклади</p><div class="chips" id="ex">${['Київ', 'Кривий Ріг', 'Дніпро', 'Львів', 'Одеса', 'Харків'].map(c => `<button type="button" class="chip${c === picked ? ' on' : ''}" data-c="${c}">${c}</button>`).join('')}</div>
-        <ul class="cities" id="cl"></ul>${actions('Продовжити')}</form>`);
-      const inp = $('#city'), err = $('#cerr');
-      const drawList = () => {
-        const q = norm(inp.value.trim());
-        const res = q ? CITIES.filter(c => norm(c[0]).includes(q) && c[0] !== inp.value.trim()).slice(0, 6) : [];
-        $('#cl').innerHTML = res.map(c => `<li><button type="button" data-c="${c[0]}">${ic('map-pin', 'sm')}<span>${c[0]}</span><small>${c[1] === 'м. Київ' ? 'місто' : c[1] + ' обл.'}</small></button></li>`).join('');
-        lucide.createIcons();
-      };
-      const pick = c => { inp.value = c; err.hidden = true; inp.classList.remove('bad'); $$('#ex .chip').forEach(b => b.classList.toggle('on', b.dataset.c === c)); drawList(); };
-      inp.addEventListener('input', () => { err.hidden = true; inp.classList.remove('bad'); $$('#ex .chip').forEach(b => b.classList.toggle('on', b.dataset.c === inp.value.trim())); drawList(); });
-      $('#f').addEventListener('click', e => { const b = e.target.closest('[data-c]'); if (b) pick(b.dataset.c); });
-      $('#f').addEventListener('submit', e => {
-        e.preventDefault();
-        const v = inp.value.trim().replace(/\s+/g, ' ');
-        const msg = !v ? 'Вкажіть ваше місто.' : v.length < 2 ? 'Назва занадто коротка.' : !/^[A-Za-zА-Яа-яІіЇїЄєҐґ'’ʼ.\-\s]+$/.test(v) ? 'Використовуйте лише літери, пробіли та дефіс.' : '';
-        if (msg) { err.textContent = msg; err.hidden = false; inp.classList.add('bad'); inp.focus(); return; }
-        const known = CITIES.find(c => c[0].toLowerCase() === v.toLowerCase());
-        const ns = Object.assign({}, st);
-        if (known) { if (ns.city !== known[0]) { ns.city = known[0]; ns.oblast = known[1]; } }
-        else if (ns.city !== v) { ns.city = v; ns.oblast = ''; }
-        kSave(ns); go(nextK);
-      });
-      return;
-    }
-
-    /* --- Крок: адреса і дані заявника --- */
-    if (cur === 'addr') {
-      mount(`<h2 class="h2">Вкажіть адресу</h2><p class="muted sp">Адреса потрібна, щоб підставити її в інструкцію. Дані зберігаються лише у вашому браузері.</p>
-        <form id="f" novalidate autocomplete="off">
-        <div class="grid2"><div class="field"><label for="oblast">Область</label><select id="oblast"><option value="">Оберіть область</option>${OBLASTS.map(o => `<option${o === st.oblast ? ' selected' : ''}>${o}</option>`).join('')}</select><p class="err" hidden></p></div>
-        <div class="field"><label for="fcity">Місто</label><input id="fcity" type="text" value="${esc(st.city || '')}" /><p class="err" hidden></p></div></div>
-        <div class="field"><label for="street">Вулиця</label><input id="street" type="text" placeholder="Наприклад, Соборна" value="${esc(st.street || '')}" /><p class="err" hidden></p></div>
-        <div class="grid2"><div class="field"><label for="house">Будинок</label><input id="house" type="text" placeholder="Наприклад, 12А" value="${esc(st.house || '')}" /><p class="err" hidden></p></div>
-        <div class="field"><label for="flat">Квартира <span class="opt-l">необовʼязково</span></label><input id="flat" type="text" inputmode="numeric" placeholder="Наприклад, 45" value="${esc(st.flat || '')}" /><p class="err" hidden></p></div></div>
-        <div class="field"><label for="name">Ваше імʼя для заяви <span class="opt-l">необовʼязково</span></label><input id="name" type="text" placeholder="Прізвище Імʼя По батькові" value="${esc(st.name || '')}" /><p class="err" hidden></p>
-        <p class="muted sp2">Не обовʼязково. Імʼя лише підставляється в інструкцію й нікуди не надсилається.</p></div>
-        ${actions('Показати інструкцію', 'list-checks')}</form>`);
-      const L = "A-Za-zА-Яа-яІіЇїЄєҐґ'’ʼ";
-      const rules = {
-        oblast: v => v ? '' : 'Оберіть область.',
-        fcity: v => v.length < 2 ? 'Вкажіть місто.' : '',
-        street: v => v.length < 2 ? 'Вкажіть назву вулиці.' : /^[\d\s]+$/.test(v) ? 'Вулиця не може складатися лише з цифр.' : '',
-        house: v => !v ? 'Вкажіть номер будинку.' : /^\d{1,4}\s?[А-Яа-яІіЇїЄєҐґA-Za-z]?(\/\d{1,3})?(-[А-Яа-яІіЇїЄєҐґA-Za-z0-9]{1,3})?$/.test(v) ? '' : 'Вкажіть номер у форматі 12, 12А або 12/2.',
-        flat: v => !v || /^\d{1,4}$/.test(v) ? '' : 'Номер квартири: лише цифри.',
-        name: v => !v || new RegExp(`^[${L}.\\-\\s]{2,80}$`).test(v) ? '' : 'Використовуйте лише літери, пробіли та дефіс.'
-      };
-      const check = id => { const el = $('#' + id), m = rules[id](el.value.trim()), p = el.parentElement.querySelector('.err'); p.textContent = m; p.hidden = !m; el.classList.toggle('bad', !!m); return !m; };
-      Object.keys(rules).forEach(id => { const el = $('#' + id); el.addEventListener('blur', () => check(id)); el.addEventListener('input', () => { if (el.classList.contains('bad')) check(id); }); });
-      $('#f').addEventListener('submit', e => {
-        e.preventDefault();
-        if (!Object.keys(rules).map(check).every(Boolean)) { const b = $('.bad'); if (b) b.focus(); return; }
-        kSave({ oblast: $('#oblast').value, city: $('#fcity').value.trim(), street: $('#street').value.trim(), house: $('#house').value.trim(), flat: $('#flat').value.trim(), name: $('#name').value.trim().replace(/\s+/g, ' ') });
-        go(nextK);
-      });
-      return;
-    }
+    if (cur === 'place') return stepPlace({ st, mount, actions, go, nextK });
+    if (cur === 'addr') return stepAddr({ st, mount, actions, go, nextK });
 
     /* --- Крок: уточнення (спосіб і варіант строку) --- */
     if (cur === 'choice') {
@@ -579,71 +586,81 @@
 
   const saveBtn = id => `<button class="btn ghost save" type="button" data-save="${id}"></button>`;
 
-  function pageInstruction(id, opt) {
-    const base = INS[id]; if (!base) return page404();
-    if (base.flow === 'komunalka') return pageKom(1);
-    const cat = catById(base.cat);
-    if (base.wizard && !opt) return pageChoice(base, cat);
-    let ins = base, chosen = null;
-    if (base.wizard) {
-      chosen = base.wizard.options.find(o => o.id === opt);
-      if (!chosen) return pageChoice(base, cat);
-      const o = Object.assign({}, chosen.over);
-      if (o.steps) o.steps = o.steps.map(s => s.split('|'));
-      ins = Object.assign({}, base, o);
+  /* ---------- Інструкції: той самий персональний покроковий флоу ---------- */
+  const iselAll = () => store.get('yak_isel', {});
+  const setISel = (id, v) => { const a = iselAll(); a[id] = Object.assign({}, a[id], v); store.set('yak_isel', a); };
+  function insPlan(ins) {
+    const m = INS_FLOW[ins.id] || {};
+    const place = !!(m.where || m.addr || m.use), addr = !!m.addr, choice = !!ins.wizard;
+    return { m, place, addr, choice, steps: [].concat(place ? ['place'] : [], addr ? ['addr'] : [], choice ? ['choice'] : [], ['result']) };
+  }
+
+  function pageInstruction(id, a2) {
+    const base0 = INS[id]; if (!base0) return page404();
+    if (base0.flow === 'komunalka') return pageKom(1);
+    const cat = catById(base0.cat), plan = insPlan(base0);
+    if (base0.wizard && base0.wizard.options.some(o => o.id === a2)) { setISel(id, { opt: a2 }); location.replace(`#/i/${id}/result`); return; }
+    const st = kState(), sel = iselAll()[id] || {};
+    const opt = base0.wizard ? base0.wizard.options.find(o => o.id === sel.opt) : null;
+    const base = '#/i/' + id;
+    const cur = plan.steps.includes(a2) ? a2 : plan.steps[0];
+    const miss = plan.steps.find(k => (k === 'place' && !st.city) || (k === 'addr' && !(st.street && st.house && st.oblast)) || (k === 'choice' && !opt));
+    if (miss && plan.steps.indexOf(miss) < plan.steps.indexOf(cur)) { location.replace(`${base}/${miss}`); return; }
+    const idx = plan.steps.indexOf(cur), nextK = plan.steps[idx + 1], prevK = plan.steps[idx - 1];
+    const backHref = prevK ? `${base}/${prevK}` : '#/c/' + cat.id;
+    const bc = [['Головна', '#/'], [cat.title, '#/c/' + cat.id], [base0.title]];
+    const mount = html => { app.innerHTML = `<article class="container narrow-m"><div class="page-head">${crumbs(bc)}
+      <div class="title-row"><h1>${esc(base0.title)}</h1>${saveBtn(id)}</div><p class="lead">${esc(base0.summary)}</p>
+      <div class="meta"><span>${ic('clock')} Приблизно ${esc((opt && opt.over.time) || base0.time)}</span></div>
+      ${plan.steps.length > 1 ? svcProg(plan, cur, base) : ''}</div>${html}</article>`; lucide.createIcons(); refreshSaveUI(); window.scrollTo(0, 0); };
+    const actions = (label, icn) => `<div class="actions"><a class="btn ghost" href="${backHref}">${ic('arrow-left')} Назад</a><button class="btn primary" type="submit">${label} ${ic(icn || 'arrow-right')}</button></div>`;
+    const go = k => { location.hash = `${base}/${k}`; };
+
+    if (cur === 'place') return stepPlace({ st, mount, actions, go, nextK });
+    if (cur === 'addr') return stepAddr({ st, mount, actions, go, nextK });
+    if (cur === 'choice') {
+      const w = base0.wizard;
+      mount(`<h2 class="h2">${esc(w.q)}</h2><p class="muted sp">${esc(w.sub)}</p>
+        <form id="f" novalidate><div class="opts" role="radiogroup" aria-label="${esc(w.q)}">${w.options.map(o => `<label class="opt"><input type="radio" name="o" value="${o.id}"${sel.opt === o.id ? ' checked' : ''}>${ic(o.icon, 'oi')}<span><b>${esc(o.label)}</b><small>${esc(o.desc)}</small></span></label>`).join('')}</div>
+        <p class="err" id="cerr" hidden>Оберіть один із варіантів, щоб продовжити.</p>${actions('Показати інструкцію', 'list-checks')}</form>`);
+      const f = $('#f');
+      f.addEventListener('change', () => { $('#cerr').hidden = true; });
+      f.addEventListener('submit', e => { e.preventDefault(); if (!f.o.value) { $('#cerr').hidden = false; return; } setISel(id, { opt: f.o.value }); go(nextK); });
+      return;
     }
-    const key = id + (opt ? '-' + opt : '');
-    const done = getDone(key);
-    const bc = [['Головна', '#/'], [cat.title, '#/c/' + cat.id]];
-    if (chosen) { bc.push([base.title, '#/i/' + id]); bc.push([chosen.label]); } else bc.push([base.title]);
-    app.innerHTML = `<article class="container narrow-l">
-      <div class="page-head">${crumbs(bc)}
-        <div class="title-row"><h1>${esc(base.title)}</h1>${saveBtn(id)}</div>
-        <p class="lead">${esc(ins.summary)}</p>
-        <div class="meta"><span>${ic('clock')} Приблизно ${esc(ins.time)}</span>${chosen ? `<span>${ic('route')} Ваш вибір: <b>${esc(chosen.label)}</b> · <a href="#/i/${id}">змінити</a></span>` : ''}</div>
-      </div>
+
+    /* --- Результат --- */
+    let ins = base0;
+    if (opt) { const o = Object.assign({}, opt.over); if (o.steps) o.steps = o.steps.map(s => (typeof s === 'string' ? s.split('|') : s)); if (o.links) o.links = o.links.map(l => (typeof l === 'string' ? l.split('|') : l)); ins = Object.assign({}, base0, o); }
+    const m = plan.m, city = st.city || '';
+    const steps = ins.steps.map(s => ({ t: s[0], d: s[1] || '' }));
+    const pre = [];
+    if (m.use && plan.addr && svcAddrLine(st)) pre.push({ t: 'Вкажіть вашу адресу', d: `${svcAddrLine(st)}. ${m.use}` });
+    if (m.where && city) pre.push({ t: `Знайдіть ${m.where} у місті ${city}`, d: 'Перевірте адресу, години роботи та чи потрібен попередній запис.', actions: [{ label: 'Знайти на карті', href: mapUrl(m.where + ' ' + city) }] });
+    const all = pre.concat(steps);
+    const answers = [plan.place && city ? [plan.addr ? svcAddrLine(st) : 'Місто: ' + city, `${base}/${plan.addr ? 'addr' : 'place'}`] : null, opt ? [opt.label, `${base}/choice`] : null].filter(Boolean);
+    const summary = [`Інструкція: ${base0.title}`, opt ? `Ситуація: ${opt.label}` : '', plan.place && city ? `Адреса: ${plan.addr ? svcAddrLine(st) : city}` : '', plan.addr && st.name ? `Заявник: ${st.name}` : '', `Орієнтовний час: ${ins.time}`, ins.needs.length ? 'Документи:\n- ' + ins.needs.join('\n- ') : ''].filter(Boolean).join('\n');
+    const cta = m.where && city ? `<a class="btn primary big" href="${mapUrl(m.where + ' ' + city)}" target="_blank" rel="noopener noreferrer">Знайти ${esc(m.where)} на карті${ic('map-pin')}</a>` : (ins.links[0] ? extLink('Відкрити: ' + ins.links[0][0], ins.links[0][1], 'btn primary big') : '');
+    mount(`${answers.length ? `<div class="addr">${ic('map-pin')}<span><b>Ваша інструкція.</b> ${esc(answers.map(x => x[0]).join(' | '))}</span><a href="${answers[0][1]}">Змінити</a></div>` : ''}
       ${ins.why ? `<div class="why">${ic('lightbulb')}<p><b>Чому спершу так.</b> ${esc(ins.why)}</p></div>` : ''}
-      <section><h2 class="h2">Що знадобиться</h2><ul class="need">${ins.needs.map(n => `<li>${ic('check')}<span>${esc(n)}</span></li>`).join('')}</ul></section>
-      <section><div class="h2-row"><h2 class="h2">Покрокова інструкція</h2><span class="muted" id="progTxt"></span></div>
-        <div class="bar"><i id="progBar"></i></div>
-        <ol class="steps">${ins.steps.map((s, i) => `<li class="step${done.includes(i) ? ' done' : ''}"><label><input type="checkbox" data-i="${i}" ${done.includes(i) ? 'checked' : ''}><span class="num">${i + 1}</span><span class="body"><b>${esc(s[0])}</b><span>${esc(s[1] || '')}</span></span></label></li>`).join('')}</ol>
-      </section>
-      <section><h2 class="h2">Можливі способи</h2><div class="methods">${ins.methods.map((m, i) => `<div class="method">${i === 0 ? '<span class="tag">Найпростіший</span>' : ''}<b>${esc(m[0])}</b><p>${esc(m[1])}</p></div>`).join('')}</div></section>
+      <section><h2 class="h2">Що знадобиться</h2><ul class="docs">${ins.needs.map(n => `<li>${ic('file-text')}<span>${esc(n)}</span></li>`).join('')}</ul></section>
+      <h2 class="h2 sub">Покрокова інструкція</h2>
+      <ol class="osteps">${all.map((x, i) => `<li class="ostep"><span class="num">${i + 1}</span><div class="body"><b>${esc(x.t)}</b><span>${esc(x.d)}</span>${x.actions ? `<div class="oact">${x.actions.map(a => extLink(a.label, a.href, 'btn ghost sm-btn')).join('')}</div>` : ''}</div></li>`).join('')}</ol>
+      ${cta ? `<div class="cta-row">${cta}</div>` : ''}
+      <div class="note neutral">${ic('info')}<p>Подача документів відбувається в органі або на сайті сервісу, а не на «Як?». Тут лише підказки.</p></div>
+      <section class="sum"><div class="h2-row"><h2 class="h2">Дані для заяви</h2></div><pre id="sumtxt">${esc(summary)}</pre>
+        <div class="oact"><button class="btn ghost" id="copy" type="button">${ic('copy')} Копіювати</button><button class="btn ghost" id="print" type="button">${ic('printer')} Друкувати</button></div></section>
+      <section><h2 class="h2">Можливі способи</h2><div class="methods">${ins.methods.map((x, i) => `<div class="method">${i === 0 ? '<span class="tag">Найпростіший</span>' : ''}<b>${esc(x[0])}</b><p>${esc(x[1])}</p></div>`).join('')}</div></section>
       <section><h2 class="h2">Часті запитання</h2>${faqHtml(ins.faq)}</section>
       <section><h2 class="h2">Корисні офіційні посилання</h2><div class="links">${ins.links.map(l => extLink(l[0], l[1])).join('')}</div></section>
       ${demoNote}
       <p class="checked">${ic('calendar-check')} Дата останньої перевірки інформації: ${CHECKED} (демо)</p>
-      <div class="bottom-nav"><a class="btn ghost" href="#/c/${cat.id}">${ic('arrow-left')} До розділу «${esc(cat.title)}»</a></div>
-    </article>`;
-    const upd = () => {
-      const boxes = $$('.step input'); const n = boxes.filter(b => b.checked).length;
-      $('#progTxt').textContent = `Виконано ${n} з ${boxes.length}`; $('#progBar').style.width = (n / boxes.length * 100) + '%';
-    };
-    $('.steps').addEventListener('change', e => {
-      const b = e.target; if (!b.matches('input')) return;
-      b.closest('.step').classList.toggle('done', b.checked);
-      store.set('yak_done_' + key, $$('.step input').filter(x => x.checked).map(x => +x.dataset.i));
-      upd();
-      if ($$('.step input').every(x => x.checked)) toast('Усі кроки виконано. Чудова робота!', 'ok');
+      <div class="actions"><a class="btn ghost" href="${backHref}">${ic('arrow-left')} Назад</a><a class="btn ghost" href="#/c/${cat.id}">До розділу «${esc(cat.title)}»</a></div>`);
+    $('#copy').addEventListener('click', () => {
+      const t = $('#sumtxt').textContent;
+      (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => toast('Дані скопійовано', 'ok'), () => { const r = document.createRange(); r.selectNodeContents($('#sumtxt')); const sl = getSelection(); sl.removeAllRanges(); sl.addRange(r); toast('Виділено. Натисніть Ctrl+C'); });
     });
-    upd(); refreshSaveUI();
-  }
-
-  function pageChoice(base, cat) {
-    const w = base.wizard;
-    app.innerHTML = `<div class="container narrow-m"><div class="page-head">${crumbs([['Головна', '#/'], [cat.title, '#/c/' + cat.id], [base.title]])}
-      <div class="progress"><div class="bar"><i style="width:50%"></i></div><span>Крок 1 з 2</span></div>
-      <h1>${esc(w.q)}</h1><p class="lead">${esc(w.sub)}</p></div>
-      <form id="choice" novalidate><div class="opts" role="radiogroup" aria-label="${esc(w.q)}">${w.options.map(o => `<label class="opt"><input type="radio" name="o" value="${o.id}">${ic(o.icon, 'oi')}<span><b>${esc(o.label)}</b><small>${esc(o.desc)}</small></span></label>`).join('')}</div>
-      <p class="err" id="cerr" hidden>Оберіть один із варіантів, щоб продовжити.</p>
-      <div class="actions"><a class="btn ghost" href="#/c/${cat.id}">${ic('arrow-left')} Назад</a><button class="btn primary" type="submit">Продовжити ${ic('arrow-right')}</button></div></form></div>`;
-    const f = $('#choice');
-    f.addEventListener('change', () => { $('#cerr').hidden = true; });
-    f.addEventListener('submit', e => {
-      e.preventDefault();
-      const v = f.o.value; if (!v) { $('#cerr').hidden = false; return; }
-      location.hash = `#/i/${base.id}/${v}`;
-    });
+    $('#print').addEventListener('click', () => window.print());
   }
 
   /* ---------- Сценарій: оплата комуналки ---------- */
