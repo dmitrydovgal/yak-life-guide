@@ -757,20 +757,23 @@
   }
 
   function kStep3(st) {
-    const order = ['easypay', 'privat24', 'portmone'].map(k => SERVICES[k]);
+    const EP_CITIES = ['Київ', 'Житомир', 'Одеса', 'Миколаїв', 'Івано-Франківськ'];
+    const epOk = EP_CITIES.includes(st.city);
+    const order = (epOk ? ['easypay', 'privat24', 'portmone'] : ['portmone', 'privat24', 'easypay']).map(k => SERVICES[k]);
     const local = LOCAL_PROVIDERS[st.city];
     app.innerHTML = `<div class="container narrow-l"><div class="page-head">${kCrumbs()}${kProgress(3, st)}
       <h1>Оберіть найпростіший спосіб оплати</h1><p class="lead">Ми підібрали доступні варіанти для вашого міста та адреси.</p>
       <div class="addr">${ic('map-pin')}<span>${esc(addrLine(st))}</span><a href="#/k/2">Змінити</a></div></div>
       <div class="note">${ic('info')}<p><b>Це демонстрація.</b> Результати не є реальною перевіркою постачальників, і ми не стверджуємо, що кожен сервіс підтримує всі рахунки за вашою адресою.</p></div>
-      <div class="svc-list">${order.map(s => `<section class="svc${s.recommended ? ' rec' : ''}">
-        ${s.recommended ? '<span class="tag">Найпростіший варіант</span>' : ''}
+      <div class="svc-list">${order.map(s => `<section class="svc${s === order[0] ? ' rec' : ''}">
+        ${s === order[0] ? '<span class="tag">Найпростіший варіант</span>' : ''}
         <div class="svc-head"><span class="svc-ic">${ic(s.icon)}</span><h2>${s.name}</h2></div>
         <p>${esc(s.desc)}</p>
         <p class="svc-why">${ic('lightbulb')}<span><b>Чому пропонуємо:</b> ${esc(s.why)}</span></p>
+        ${s.id === 'easypay' && !epOk ? `<p class="svc-why warn">${ic('triangle-alert')}<span>На сторінці сервісу пошук за адресою заявлено для: ${EP_CITIES.join(', ')}. Для міста ${esc(st.city)} він може не спрацювати, тому цей варіант не перший.</span></p>` : ''}
         <div class="pc"><div><h4>Переваги</h4><ul class="pros">${s.pros.map(x => `<li>${ic('check')}${esc(x)}</li>`).join('')}</ul></div>
         <div><h4>Можливі обмеження</h4><ul class="cons">${s.cons.map(x => `<li>${ic('triangle-alert')}${esc(x)}</li>`).join('')}</ul></div></div>
-        <div class="svc-actions"><a class="btn ${s.recommended ? 'primary' : 'ghost'}" href="#/k/4/${s.id}">Як це працює?</a>${extLink('Перейти до сервісу', s.url, 'btn ghost')}</div>
+        <div class="svc-actions"><a class="btn ${s === order[0] ? 'primary' : 'ghost'}" href="#/k/4/${s.id}">Як це працює?</a>${extLink('Перейти до сервісу', s.url, 'btn ghost')}</div>
       </section>`).join('')}</div>
       <section class="local"><h2 class="h2">Місцеві постачальники</h2>
         ${local ? `<p class="muted">Демонстраційний перелік для міста ${esc(st.city)}. Це не перевірка вашого будинку. Назву компанії перевіряйте у квитанції.</p>

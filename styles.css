@@ -354,3 +354,14 @@ a.kp:hover i{background:#d2e3fc}
 .related{list-style:none;padding:0!important}
 .post .crumbs li{font-size:14px}
 .post{padding-top:20px}
+.short{background:var(--lt);border-radius:var(--r);padding:16px 20px;margin:20px 0}
+.short ul{margin:8px 0 0}
+.short li,.short p{font-size:16px}
+.kv{display:grid;grid-template-columns:max-content 1fr;gap:6px 18px;margin:10px 0 0;font-size:15px}
+.kv dt{color:var(--tx2)}.kv dd{margin:0}
+.related li{display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid #EEF0F2;padding:8px 0;margin:0}
+.related li small{color:var(--tx2);white-space:nowrap}
+.post h3{font-size:18px;margin:22px 0 8px}
+.source{font-size:13px;color:var(--tx2)}
+@media (max-width:560px){.kv{grid-template-columns:1fr}.kv dt{margin-top:6px}}
+.svc-why.warn{background:#fffbf0;color:#5f4b00}.svc-why.warn i{color:#b06000}
