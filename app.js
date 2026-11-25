@@ -1,4 +1,4 @@
-/* «Як?» — клієнтська логіка прототипу: роутер, пошук, збереження, сценарій комуналки */
+/* «Як?» — клієнтська логіка сайту: роутер, пошук, збереження, сценарій комуналки */
 (function () {
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -217,7 +217,7 @@
       <p class="lead">З чим люди звертаються найчастіше.</p></div>
       ${insList(POPULAR.map(id => INS[id]))}
       <h2 class="h2 mt">Загальні запитання</h2>
-      ${faqHtml([['Чи це офіційний сервіс?', 'Ні. «Як?» — демонстраційний прототип. Ми пояснюємо, як діяти, й ведемо на офіційні сервіси.'], ['Чи потрібно реєструватися?', 'Ні. Збережені інструкції зберігаються лише у вашому браузері.'], ['Чи можна покладатися на інструкції?', 'Матеріали демонстраційні. Завжди звіряйтеся з офіційними джерелами.']])}</div>`;
+      ${faqHtml([['Чи це офіційний сервіс?', 'Ні. «Як?» — незалежний інформаційний гід. Ми пояснюємо, як діяти, й ведемо на офіційні сервіси.'], ['Чи потрібно реєструватися?', 'Ні. Збережені інструкції зберігаються лише у вашому браузері.'], ['Чи можна покладатися на інструкції?', 'Матеріали демонстраційні. Завжди звіряйтеся з офіційними джерелами.']])}</div>`;
     refreshSaveUI();
   }
 
@@ -225,7 +225,7 @@
     app.innerHTML = `<div class="container narrow-l"><div class="page-head">${crumbs([['Головна', '#/'], ['Про проєкт']])}<h1>Про проєкт</h1>
       <p class="lead">«Як?» — цифровий помічник, який пояснює, як вирішувати повсякденні життєві питання в Україні.</p></div>
       <div class="prose"><h3>Наш принцип</h3><p>Мінімум дій від вас, максимум користі. Ми питаємо лише те, що впливає на результат, і показуємо найкоротший шлях першим.</p>
-      <h3>Що це не є</h3><p>Це не державний портал, не платіжний сервіс і не юридична консультація. Усі матеріали в цьому прототипі — демонстраційні.</p>
+      <h3>Що це не є</h3><p>Це не державний портал, не платіжний сервіс і не юридична консультація. Матеріали мають інформаційний характер: актуальні умови перевіряйте в офіційних джерелах.</p>
       <h3>Ваші дані</h3><p>Ми не просимо ПІБ, телефон чи паспорт. Збережені інструкції та введена адреса зберігаються лише у вашому браузері.</p></div>
       ${demoNote}<a class="btn primary mt" href="#/topics">Переглянути всі теми</a></div>`;
   }
@@ -276,7 +276,7 @@
       <form class="searchbox plain" id="evf" autocomplete="off" role="search">${ic('search', 'lead')}<input id="evq" type="text" placeholder="Знайти державну послугу, наприклад «свідоцтво про народження»" aria-label="Пошук державної послуги" /></form>
       <div id="evtabs" class="chips" role="tablist"><button class="chip" data-a="c" role="tab">Для громадян</button><button class="chip" data-a="b" role="tab">Для бізнесу</button></div>
       <div id="evres"></div>
-      <p class="source">Дані: <a href="https://guide.diia.gov.ua/" target="_blank" rel="noopener noreferrer">Гід з державних послуг</a> (відкритий реєстр, CC BY 4.0), скорочено для демонстрації.</p></div>`;
+      <p class="source">Дані: <a href="https://guide.diia.gov.ua/" target="_blank" rel="noopener noreferrer">Гід з державних послуг</a> (відкритий реєстр, CC BY 4.0), текст скорочено.</p></div>`;
     const tok = routeTok;
     const draw = () => {
       $$('#evtabs .chip').forEach(c => { const on = c.dataset.a === evAud; c.classList.toggle('on', on); c.setAttribute('aria-selected', on); });
@@ -512,7 +512,7 @@
       <p class="lead">${esc(shorten(s.d || s.f, 230))}</p>
       <div class="meta">${time ? `<span>${ic('clock')} ${esc(shorten(time, 70))}</span>` : ''}${cost ? `<span>${ic('banknote')} ${esc(shorten(cost, 70))}</span>` : ''}</div>
       ${plan.steps.length > 1 ? svcProg(plan, cur, base) : ''}</div>`;
-    const source = `<p class="source">Джерело: <a href="${guideUrl}" target="_blank" rel="noopener noreferrer">Гід з державних послуг</a>, послуга № ${esc(sid)} (CC BY 4.0, текст скорочено). Кроки сформовано автоматично за даними реєстру, дата перевірки: ${CHECKED} (демо).</p>`;
+    const source = `<p class="source">Джерело: <a href="${guideUrl}" target="_blank" rel="noopener noreferrer">Гід з державних послуг</a>, послуга № ${esc(sid)} (CC BY 4.0, текст скорочено). Кроки сформовано автоматично за даними реєстру, дата оновлення: ${CHECKED}.</p>`;
     const actions = (nextLabel, nextIcon) => `<div class="actions"><a class="btn ghost" href="${backHref}">${ic('arrow-left')} Назад</a><button class="btn primary" type="submit">${nextLabel} ${ic(nextIcon || 'arrow-right')}</button></div>`;
     const go = k => { location.hash = `${base}/${k}`; };
     const mount = html => { app.innerHTML = `<article class="container narrow-m">${head}${html}</article>`; lucide.createIcons(); refreshSaveUI(); };
@@ -654,7 +654,7 @@
       <section><h2 class="h2">Часті запитання</h2>${faqHtml(ins.faq)}</section>
       <section><h2 class="h2">Корисні офіційні посилання</h2><div class="links">${ins.links.map(l => extLink(l[0], l[1])).join('')}</div></section>
       ${demoNote}
-      <p class="checked">${ic('calendar-check')} Дата останньої перевірки інформації: ${CHECKED} (демо)</p>
+      <p class="checked">${ic('calendar-check')} Дата оновлення інформації: ${CHECKED}</p>
       <div class="actions"><a class="btn ghost" href="${backHref}">${ic('arrow-left')} Назад</a><a class="btn ghost" href="#/c/${cat.id}">До розділу «${esc(cat.title)}»</a></div>`);
     $('#copy').addEventListener('click', () => {
       const t = $('#sumtxt').textContent;
@@ -699,7 +699,7 @@
       const q = norm(inp.value.trim());
       const res = CITIES.filter(c => !q || norm(c[0]).includes(q)).slice(0, 8);
       $('#cl').innerHTML = (q && picked !== inp.value) ? (res.length ? res.map(c => `<li><button type="button" data-c="${c[0]}">${ic('map-pin', 'sm')}<span>${c[0]}</span><small>${c[1] === 'м. Київ' ? 'місто' : c[1] + ' обл.'}</small></button></li>`).join('')
-        : `<li class="none">${ic('search-x', 'sm')}<span>Такого міста немає в демо-списку. Оберіть місто з прикладів або зі списку.</span></li>`) : '';
+        : `<li class="none">${ic('search-x', 'sm')}<span>Такого міста немає в списку. Оберіть місто з прикладів або зі списку.</span></li>`) : '';
       lucide.createIcons();
     };
     const pick = c => { picked = c; inp.value = c; err.hidden = true; inp.classList.remove('bad'); $$('#ex .chip').forEach(b => b.classList.toggle('on', b.dataset.c === c)); drawList(); };
@@ -764,7 +764,7 @@
     app.innerHTML = `<div class="container narrow-l"><div class="page-head">${kCrumbs()}${kProgress(3, st)}
       <h1>Оберіть найпростіший спосіб оплати</h1><p class="lead">Ми підібрали доступні варіанти для вашого міста та адреси.</p>
       <div class="addr">${ic('map-pin')}<span>${esc(addrLine(st))}</span><a href="#/k/2">Змінити</a></div></div>
-      <div class="note">${ic('info')}<p><b>Це демонстрація.</b> Результати не є реальною перевіркою постачальників, і ми не стверджуємо, що кожен сервіс підтримує всі рахунки за вашою адресою.</p></div>
+      <div class="note">${ic('info')}<p><b>Орієнтовний підбір.</b> Результати не є перевіркою в реальному часі постачальників, і ми не стверджуємо, що кожен сервіс підтримує всі рахунки за вашою адресою.</p></div>
       <div class="svc-list">${order.map(s => `<section class="svc${s === order[0] ? ' rec' : ''}">
         ${s === order[0] ? '<span class="tag">Найпростіший варіант</span>' : ''}
         <div class="svc-head"><span class="svc-ic">${ic(s.icon)}</span><h2>${s.name}</h2></div>
@@ -778,7 +778,7 @@
       <section class="local"><h2 class="h2">Місцеві постачальники</h2>
         ${local ? `<p class="muted">Демонстраційний перелік для міста ${esc(st.city)}. Це не перевірка вашого будинку. Назву компанії перевіряйте у квитанції.</p>
         <ul class="rows plainrows">${local.map(p => `<li class="prov">${ic('building-2')}<span><b>${esc(p[1])}</b><small>${esc(p[0])}</small></span></li>`).join('')}</ul>`
-          : empty('Місцевих постачальників не знайдено', `Для міста ${st.city} у демо немає даних. Скористайтеся сервісами вище або знайдіть постачальника за квитанцією.`, `<a class="btn ghost" href="#/i/provider-find">Як знайти свого постачальника?</a>`)}
+          : empty('Місцевих постачальників не знайдено', `Для міста ${st.city} у нас поки немає даних. Скористайтеся сервісами вище або знайдіть постачальника за квитанцією.`, `<a class="btn ghost" href="#/i/provider-find">Як знайти свого постачальника?</a>`)}
       </section>
       <div class="actions"><a class="btn ghost" href="#/k/2">${ic('arrow-left')} Назад</a></div></div>`;
   }
@@ -788,14 +788,14 @@
     const key = 'k-' + sid, done = getDone(key);
     app.innerHTML = `<article class="container narrow-l"><div class="page-head">${crumbs([['Головна', '#/'], ['Комунальні послуги', '#/c/utilities'], ['Як оплатити комуналку?', '#/k/3'], [s.name]])}${kProgress(4, st)}
       <div class="title-row"><h1>Як оплатити комунальні послуги через ${s.name}</h1>${saveBtn('komunalka')}</div>
-      <p class="lead">Інструкція демонстраційна: назви розділів і кнопок у сервісі можуть відрізнятися. Орієнтуйтеся на підказки самого сервісу.</p>
+      <p class="lead">Увага: назви розділів і кнопок у сервісі можуть відрізнятися. Орієнтуйтеся на підказки самого сервісу.</p>
       <div class="meta"><span>${ic('clock')} Приблизно 3–5 хв</span><span>${ic('map-pin')} ${esc(addrLine(st))}</span></div></div>
       <div class="cta-row">${extLink('Відкрити ' + s.name, s.url, 'btn primary')}<a class="btn ghost" href="#/k/3">Обрати інший сервіс</a></div>
       <section><div class="h2-row"><h2 class="h2">Покрокова інструкція</h2><span class="muted" id="progTxt"></span></div><div class="bar"><i id="progBar"></i></div>
       <ol class="steps">${s.steps.map((x, i) => { const p = x.split('|'); return `<li class="step${done.includes(i) ? ' done' : ''}"><label><input type="checkbox" data-i="${i}" ${done.includes(i) ? 'checked' : ''}><span class="num">${i + 1}</span><span class="body"><b>${esc(p[0])}</b><span>${esc(p[1] || '')}</span></span></label></li>`; }).join('')}</ol></section>
       <section><h2 class="h2">Часті запитання</h2>${faqHtml(KOM_FAQ)}</section>
       <section><h2 class="h2">Корисні офіційні посилання</h2><div class="links">${Object.values(SERVICES).map(x => extLink(x.name, x.url)).join('')}</div></section>
-      ${demoNote}<p class="checked">${ic('calendar-check')} Дата останньої перевірки інформації: ${CHECKED} (демо)</p>
+      ${demoNote}<p class="checked">${ic('calendar-check')} Дата оновлення інформації: ${CHECKED}</p>
       <div class="actions"><a class="btn ghost" href="#/k/3">${ic('arrow-left')} Назад</a><a class="btn ghost" href="#/c/utilities">До розділу</a></div></article>`;
     const upd = () => { const b = $$('.step input'), n = b.filter(x => x.checked).length; $('#progTxt').textContent = `Виконано ${n} з ${b.length}`; $('#progBar').style.width = (n / b.length * 100) + '%'; };
     $('.steps').addEventListener('change', e => {

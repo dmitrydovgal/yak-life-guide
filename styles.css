@@ -267,8 +267,8 @@ a.kp:hover i{background:#d2e3fc}
 .prose p{color:var(--tx2)}
 
 /* life events */
-.ev-link{margin:24px 0 0;color:var(--tx2);font-size:14px}
-.ev-link a{margin-left:10px;white-space:nowrap}
+.ev-link{margin:24px 0 0;color:var(--tx2);font-size:14px;display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px}
+.ev-link a{white-space:normal}
 .ev-link .all{font-weight:500;display:inline-flex;align-items:center;gap:4px}
 .ev-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
 .ev{display:flex;flex-direction:column;gap:6px;border:1px solid var(--bd);border-radius:var(--r);padding:18px;color:var(--tx);transition:background .15s,border-color .15s}
@@ -292,7 +292,7 @@ a.kp:hover i{background:#d2e3fc}
 /* footer */
 .footer{border-top:1px solid #EEF0F2;background:var(--lt);color:var(--tx2);font-size:14px}
 .foot-row{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;padding-top:20px;padding-bottom:20px}
-.foot-links{display:flex;gap:18px}
+.foot-links{display:flex;flex-wrap:wrap;gap:6px 18px}
 .foot-links a{color:var(--tx2)}
 
 /* tablet */

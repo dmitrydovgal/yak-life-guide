@@ -115,7 +115,7 @@ for e in EVENTS:
     sectors_full[e[0]] = [[k, v] for k, v in secs]
 
 
-hdr = '/* Дані з відкритого реєстру «Гід з державних послуг» (guide.diia.gov.ua), ліцензія CC BY 4.0. Скорочено для прототипу. */\n'
+hdr = '/* Дані з відкритого реєстру «Гід з державних послуг» (guide.diia.gov.ua), ліцензія CC BY 4.0. Текст скорочено. */\n'
 S = (',', ':')
 open('../guide-meta.js', 'w', encoding='utf-8').write(hdr + 'const GUIDE_EVENTS=' + json.dumps(out_events, ensure_ascii=False, separators=S) + ';\n')
 open('../guide-data.js', 'w', encoding='utf-8').write(hdr + 'const GUIDE_SECTORS=' + json.dumps(sectors_full, ensure_ascii=False, separators=S) + ';\nconst GUIDE_SERVICES=' + json.dumps(services, ensure_ascii=False, separators=S) + ';\n')

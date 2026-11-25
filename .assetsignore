@@ -1,0 +1,7 @@
+_build
+.claude
+README.md
+.gitignore
+*.png
+!og-image.png
+__pycache__

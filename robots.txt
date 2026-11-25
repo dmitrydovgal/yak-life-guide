@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://dmitrydovgal.github.io/yak-life-guide/sitemap.xml
+Sitemap: https://yak-life-guide.dmitriy-dovgal28.workers.dev/sitemap.xml

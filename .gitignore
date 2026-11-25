@@ -2,3 +2,4 @@
 _build/registry.json
 *.png
 _build/__pycache__/
+!og-image.png

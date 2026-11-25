@@ -3,7 +3,7 @@
 Потрібні: export.json (node, див. README у _build) і registry.json (реєстр Гіду Дія)."""
 import json, os, re, sys
 sys.stdout.reconfigure(encoding='utf-8')
-from build_blog import page, write, e, human, SITE, DATE, ARTICLES, ROOT
+from build_blog import page, write, e, human, SITE, DATE, ARTICLES, ROOT, _lm
 
 X = json.load(open(os.path.join(os.path.dirname(__file__), 'export.json'), encoding='utf-8'))
 CATS = {c['id']: c for c in X['CATS']}
@@ -40,9 +40,21 @@ def bc_ld(items):
 def cta(href, title, text, btn):
     return f'<aside class="cta-box"><b>{e(title)}</b><p>{e(text)}</p><a class="btn primary" href="{href}">{e(btn)}</a></aside>'
 
+
+# ---------- Зв'язок інструкцій і розділів зі статтями блогу ----------
+from build_blog import CAT_HUB
+def blog_block(cid, r):
+    arts = [a for a in ARTICLES if CAT_HUB.get(a['cat'], ('',))[0] == cid]
+    if not arts: return ''
+    return '<h2>Статті блогу</h2><ul class="related">' + ''.join(f'<li><a href="{r}blog/{a["slug"]}/">{e(a["title"])}</a></li>' for a in arts) + '</ul>'
+def ins_blog_block(iid, r):
+    arts = [a for a in ARTICLES if a['cta'][0] == iid]
+    if not arts: return ''
+    return '<h2>Статті блогу за темою</h2><ul class="related">' + ''.join(f'<li><a href="{r}blog/{a["slug"]}/">{e(a["title"])}</a></li>' for a in arts) + '</ul>'
+
 URLS = [SITE, SITE + 'blog/']
 URLS += [f'{SITE}blog/{a["slug"]}/' for a in ARTICLES]
-FOOT = '<p class="callout">Матеріал демонстраційний, має інформаційний характер і не є юридичною консультацією. Актуальні умови перевіряйте в офіційних джерелах.</p>'
+FOOT = '<p class="callout">Матеріал має інформаційний характер і не є юридичною консультацією. Актуальні умови перевіряйте в офіційних джерелах.</p>'
 
 # ---------- Послуги ----------
 svc_url = {}; svc_event = {}
@@ -69,6 +81,15 @@ def lst(v):
             except Exception: pass
         return [x.strip() for x in re.split(r'\s*\|\s*', v) if x.strip()]
     return [str(x) for x in (v or [])]
+
+def _svc_desc(sid):
+    z = REG[sid]; n = svc_title[sid]
+    full = ' '.join(lst(z.get('short_description_plain')) or [n])
+    return cut(re.sub(r'\s+', ' ', z.get('short_description_plain') or full), 155)
+def _svc_base_title(sid): return cut(svc_title[sid], 72) + ' — документи, строки, вартість'
+import collections as _c
+_tc = _c.Counter(_svc_base_title(s) for s in svc_title)
+_dc = _c.Counter(_svc_desc(s) for s in svc_title)
 
 def service_page(sid):
     z = REG[sid]; n = svc_title[sid]; url = SITE + svc_url[sid]; ev = next(x for x in EVENTS if x['id'] == svc_event[sid])
@@ -118,8 +139,11 @@ def service_page(sid):
           {'@context': 'https://schema.org', '@type': 'GovernmentService', 'name': n, 'description': cut(desc_full, 300), 'serviceType': ev['title'],
            'areaServed': {'@type': 'Country', 'name': 'Україна'}, 'inLanguage': 'uk', 'url': url,
            **({'provider': {'@type': 'GovernmentOrganization', 'name': owner}} if owner else {})}]
-    title = cut(n, 72) + ' — документи, строки, вартість'
-    return page(2, title, cut(re.sub(r'\s+', ' ', z.get('short_description_plain') or full), 155), url, body, ld_script(ld), 'article', 'events')
+    title = _svc_base_title(sid)
+    if _tc[title] > 1: title = cut(n, 58) + f' (№ {sid}) — документи, строки'
+    sdesc = _svc_desc(sid)
+    if _dc[sdesc] > 1: sdesc = f'№ {sid}. ' + cut(n, 55) + ': ' + cut(re.sub(r'\s+', ' ', z.get('short_description_plain') or full), 90)
+    return page(2, title, sdesc, url, body, ld_script(ld), 'article', 'events')
 
 for sid in svc_url:
     write(svc_url[sid] + 'index.html', service_page(sid)); URLS.append(SITE + svc_url[sid])
@@ -142,7 +166,7 @@ def event_page(ev):
 <p class="source">Джерело даних: <a href="https://guide.diia.gov.ua/" target="_blank" rel="noopener noreferrer">Гід з державних послуг</a> (CC BY 4.0).</p>
 </article>'''
     ld = [bc_ld([('Головна', SITE), ('Життєві події', SITE + 'e/'), (ev['title'], url)])]
-    return page(2, f'{ev["title"]}: державні послуги, документи та інструкції', cut(ev['desc'], 150), url, body, ld_script(ld), 'website', 'events')
+    return page(2, f'{ev["title"]}: державні послуги, документи та інструкції', cut(ev['desc'] + (' Державні послуги, документи та покрокові інструкції.' if len(ev['desc']) < 90 else ''), 155), url, body, ld_script(ld), 'website', 'events')
 
 for ev in EVENTS:
     write(f'e/{ev["id"]}/index.html', event_page(ev)); URLS.append(f'{SITE}e/{ev["id"]}/')
@@ -192,18 +216,19 @@ def ins_page(i):
 {crumbs([('Головна', ''), (cat['title'], f'c/{cat["id"]}/'), (ins['title'], '')], '../../')}
 <p class="post-cat">{e(cat["title"])}</p>
 <h1>{e(ins["title"])}</h1>
-<p class="post-meta">Орієнтовний час: {e(ins["time"])} · Перевірено: {human(DATE)} (демо)</p>
+<p class="post-meta">Орієнтовний час: {e(ins["time"])} · Оновлено: {human(DATE)}</p>
 <p class="post-lead">{e(ins["summary"])}</p>
 {('<aside class="short"><b>Чому саме так</b><p>' + e(ins['why']) + '</p></aside>') if ins.get('why') else ''}
 {cta('../../#/i/' + i, 'Персональна інструкція', 'Вкажіть місто та відповідь на кілька запитань, і ми підставимо кроки під вашу ситуацію.', 'Отримати персональну інструкцію')}
 {''.join(parts)}
 {FOOT}
 <h2>Читайте також</h2><ul class="related">{''.join(f'<li><a href="../{k}/">{e(INS[k]["title"])}</a></li>' for k in others)}</ul>
+{ins_blog_block(i, '../../')}
 </article>'''
     ld = [bc_ld([('Головна', SITE), (cat['title'], f'{SITE}c/{cat["id"]}/'), (ins['title'], url)])]
     faq = [] if ins.get('flow') else ins['faq']
     if faq: ld.append({'@context': 'https://schema.org', '@type': 'FAQPage', 'mainEntity': [{'@type': 'Question', 'name': q[0], 'acceptedAnswer': {'@type': 'Answer', 'text': q[1]}} for q in faq]})
-    return page(2, f'{ins["title"]} Покрокова інструкція — Як?', cut(ins['summary'], 155), url, body, ld_script(ld), 'article', 'topics')
+    return page(2, f'{ins["title"]} Покрокова інструкція — Як?', cut(ins['summary'] + (' Покрокова інструкція з посиланнями на офіційні сервіси.' if len(ins['summary']) < 90 else ''), 155), url, body, ld_script(ld), 'article', 'topics')
 
 for i in INS:
     write(f'i/{i}/index.html', ins_page(i)); URLS.append(f'{SITE}i/{i}/')
@@ -214,6 +239,7 @@ for cid, c in CATS.items():
     body = f'''<div class="container post">{crumbs([('Головна', ''), (c['title'], '')], '../../')}
 <h1>{e(c["title"])}: покрокові інструкції</h1><p class="post-lead">{e(c["desc"])}</p>
 <ul class="related">{''.join(f'<li><a href="../../i/{k}/">{e(INS[k]["title"])}</a><small>{e(INS[k]["time"])}</small></li>' for k in items)}</ul>
+{blog_block(cid, '../../')}
 {cta('../../#/c/' + cid, 'Пошук у розділі', 'Відкрийте гід, щоб шукати інструкції та отримувати персональні кроки.', 'Відкрити розділ у гіді')}
 </div>'''
     write(f'c/{cid}/index.html', page(2, f'{c["title"]}: інструкції та поради — Як?', cut(c['desc'], 155), url, body, ld_script([bc_ld([('Головна', SITE), (c['title'], url)])]), 'website', 'topics'))
@@ -240,7 +266,7 @@ def about_page():
 <aside class="short"><b>Коротко</b><ul>
 <li>Покрокові інструкції з посиланнями на офіційні державні та комерційні сервіси.</li>
 <li>Мінімум запитань: лише те, що впливає на результат, наприклад місто чи адреса.</li>
-<li>Це демонстраційний проєкт, а не державний портал і не юридична консультація.</li>
+<li>«Як?» — незалежний інформаційний гід, а не державний портал і не юридична консультація.</li>
 </ul></aside>
 <h2>Для кого цей сервіс</h2>
 <p>Для людей, які вперше стикаються з певною справою й не знають, з чого почати: що підготувати, куди звернутися, скільки це займе часу та скільки коштуватиме. Ми не вимагаємо знання юридичних термінів і пояснюємо складні поняття простими словами.</p>
@@ -265,7 +291,7 @@ def about_page():
 <li><b>Простота.</b> Найкоротший і найзручніший шлях показуємо першим, альтернативи нижче.</li>
 <li><b>Прозорість.</b> Пояснюємо, чому пропонуємо саме такий варіант, і чесно позначаємо обмеження.</li>
 <li><b>Приватність.</b> Не просимо паспорт, телефон чи платіжні дані. Збережені інструкції та введена адреса зберігаються лише у вашому браузері.</li>
-<li><b>Без вигадок.</b> Якщо кроки не підтверджені актуальним джерелом, інструкція позначається як демонстраційна.</li>
+<li><b>Без вигадок.</b> Якщо кроки не підтверджені актуальним джерелом, ми прямо зазначаємо це на сторінці.</li>
 </ul>
 <h2>Важливе застереження</h2>
 <p>«Як?» не є державним порталом, банком чи платіжним сервісом. Матеріали мають інформаційний характер, можуть не враховувати останні зміни законодавства й не замінюють індивідуальну консультацію юриста, нотаріуса чи бухгалтера. Подання заяв і платежі відбуваються на сайтах відповідних органів і сервісів, а не на «Як?».</p>
@@ -280,5 +306,5 @@ write('about/index.html', about_page()); URLS.append(SITE + 'about/')
 
 # ---------- sitemap ----------
 seen = []; [seen.append(u) for u in URLS if u not in seen]
-write('sitemap.xml', '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' + ''.join(f'<url><loc>{u}</loc><lastmod>{DATE}</lastmod></url>\n' for u in seen) + '</urlset>\n')
+write('sitemap.xml', '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' + ''.join(f'<url><loc>{u}</loc>{_lm(u)}</url>\n' for u in seen) + '</urlset>\n')
 print(len(seen), 'urls;', len(svc_url), 'services;', len(INS), 'instructions;', len(EVENTS), 'events')

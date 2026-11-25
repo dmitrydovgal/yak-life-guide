@@ -241,3 +241,19 @@ from articles_new import NEW
 from articles_batch2 import NEW2
 _OLD_REPLACED = ('yak-oplatyty-komunalni-poslugy-onlain', 'yak-vidkryty-fop-onlain')
 ARTICLES = NEW + NEW2 + [a for a in ARTICLES if a['slug'] not in _OLD_REPLACED]
+
+
+# Дати публікації/оновлення беремо з git-історії файлу статті (а не однакову дату для всіх).
+import subprocess, os
+_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+def _git_dates(slug):
+    p = f'blog/{slug}/index.html'
+    try:
+        first = subprocess.run(['git', 'log', '--diff-filter=A', '--format=%ad', '--date=short', '--', p], cwd=_ROOT, capture_output=True, text=True, encoding='utf-8').stdout.split()
+        last = subprocess.run(['git', 'log', '-1', '--format=%ad', '--date=short', '--', p], cwd=_ROOT, capture_output=True, text=True, encoding='utf-8').stdout.split()
+        return (first[-1] if first else DATE), (last[0] if last else DATE)
+    except Exception:
+        return DATE, DATE
+for _a in ARTICLES:
+    _a['date'], _a['modified'] = _git_dates(_a['slug'])
+    if _a['modified'] < _a['date']: _a['modified'] = _a['date']
