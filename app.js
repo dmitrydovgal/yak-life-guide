@@ -265,7 +265,7 @@
   const evProg = (n, id, secIdx) => {
     const labels = ['Подія', 'Тема', 'Послуга', 'Інструкція'];
     const href = { 1: '#/events', 2: id ? '#/e/' + id : null, 3: id && secIdx != null ? `#/e/${id}/${secIdx}` : null };
-    return `<div class="kprog" aria-label="Прогрес">${labels.map((l, i) => { const s = i + 1, cls = s < n ? 'past' : s === n ? 'cur' : '', h = s < n && href[s]; return h ? `<a href="${h}" class="kp ${cls}"><em>${l}</em></a>` : `<span class="kp ${cls}"${s === n ? ' aria-current="step"' : ''}><em>${l}</em></span>`; }).join('')}</div>`;
+    return `<div class="kprog" aria-label="Прогрес">${labels.map((l, i) => { const s = i + 1, cls = s < n ? 'past' : s === n ? 'cur' : '', h = s < n && href[s]; return h ? `<a href="${h}" class="kp ${cls}"><i>${ic('check')}</i><em>${l}</em></a>` : `<span class="kp ${cls}"${s === n ? ' aria-current="step"' : ''}><i>${s}</i><em>${l}</em></span>`; }).join('')}</div>`;
   };
   let evAud = 'c';
   function pageEvents() {
@@ -338,51 +338,227 @@
     bindFilter('#sq', draw); draw();
   }
 
-  async function pageService(sid, eid) {
+  /* ---------- Послуга: персональний покроковий флоу ---------- */
+  const selStore = () => store.get('yak_sel', {});
+  const getSel = sid => selStore()[sid] || {};
+  const setSel = (sid, v) => { const a = selStore(); a[sid] = Object.assign({}, a[sid], v); store.set('yak_sel', a); };
+  const ADDR_RX = /місця проживання|реєстрац\S* місця|адрес|житл|квартир|будинк|земельн|нерухом|комунальн|субсид|прописк/i;
+  const shorten = (t, n) => { t = String(t || ''); return t.length <= n ? t : t.slice(0, Math.max(t.lastIndexOf(' ', n), n * .6)).replace(/[\s,;.]+$/, '') + '…'; };
+  const mapUrl = q => 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(q);
+
+  function svcVariants(s) {
+    const parse = str => { const m = {}; String(str || '').split(';').map(x => x.trim()).filter(Boolean).forEach(p => { const i = p.indexOf(': '); if (i > 0) m[p.slice(0, i)] = p.slice(i + 2); }); return m; };
+    const c = parse(s.c), t = parse(s.t);
+    const labels = [...new Set([...Object.keys(c), ...Object.keys(t)])];
+    return labels.length > 1 ? labels.map(l => ({ id: l, label: l, cost: c[l] || '', time: t[l] || '' })) : [];
+  }
+  function svcWays(s) {
+    const o = [];
+    if (s.l || s.w.includes('Електронно')) o.push({ id: 'online', label: 'Онлайн', desc: s.l ? 'Через електронний сервіс, без походів в установу' : 'Дистанційно, якщо орган підтримує такий спосіб', icon: 'smartphone' });
+    if (s.w.includes('Особисто') || !o.length) o.push({ id: 'office', label: 'Особисто в органі', desc: 'Прийти з документами до органу, що надає послугу', icon: 'building-2' });
+    if (s.w.includes('Поштою')) o.push({ id: 'mail', label: 'Письмово, поштою', desc: 'Надіслати заяву та копії документів листом', icon: 'mail' });
+    return o;
+  }
+  function svcPlan(s) {
+    const ways = svcWays(s), vars = svcVariants(s);
+    const needsPlace = ways.some(w => w.id !== 'online');
+    const needsAddr = needsPlace && ADDR_RX.test([s.n, s.f, s.d, s.s].join(' '));
+    const choice = ways.length > 1 || vars.length > 1;
+    const steps = [].concat(needsPlace ? ['place'] : [], needsAddr ? ['addr'] : [], choice ? ['choice'] : [], ['result']);
+    return { ways, vars, steps, needsPlace, needsAddr };
+  }
+  const SVC_LABELS = { place: 'Місто', addr: 'Адреса', choice: 'Уточнення', result: 'Інструкція' };
+  function svcMissing(plan, st, sel) {
+    for (const k of plan.steps) {
+      if (k === 'place' && !st.city) return k;
+      if (k === 'addr' && !(st.street && st.house && st.oblast)) return k;
+      if (k === 'choice' && ((plan.ways.length > 1 && !sel.way) || (plan.vars.length > 1 && !sel.variant))) return k;
+    }
+    return null;
+  }
+  const svcAddrLine = st => [st.oblast && st.oblast !== 'м. Київ' ? st.oblast + ' обл.' : '', st.city ? (st.oblast === 'м. Київ' ? '' : 'м. ') + st.city : '', st.street, st.house ? 'буд. ' + st.house : '', st.flat ? 'кв. ' + st.flat : ''].filter(Boolean).join(', ');
+  const svcProg = (plan, cur, base) => {
+    const idx = plan.steps.indexOf(cur);
+    return `<div class="kprog" aria-label="Прогрес">${plan.steps.map((k, i) => {
+      const cls = i < idx ? 'past' : i === idx ? 'cur' : '';
+      const inner = `<i>${i < idx ? ic('check') : i + 1}</i><em>${SVC_LABELS[k]}</em>`;
+      return i < idx ? `<a class="kp ${cls}" href="${base}/${k}">${inner}</a>` : `<span class="kp ${cls}"${i === idx ? ' aria-current="step"' : ''}>${inner}</span>`;
+    }).join('')}</div>`;
+  };
+
+  /* Побудова персональних кроків інструкції */
+  function svcSteps(s, ctx) {
+    const { st, way, variant } = ctx, city = st.city || '';
+    const out = [];
+    const prov = s.v[0] || 'орган, що надає послугу';
+    const provShort = shorten(prov, 70);
+    const guideUrl = 'https://guide.diia.gov.ua/register/' + ctx.sid + '/';
+    out.push({ t: 'Підготуйте документи', d: s.i.length ? 'Вам знадобляться (деякі лише в окремих випадках, уточніть в органі):' : 'Окремий перелік документів у реєстрі не вказано. Уточніть його в органі перед візитом.', list: s.i });
+    if (way === 'online') {
+      out.push({ t: 'Відкрийте електронний сервіс', d: s.l ? 'Подайте заяву дистанційно. Сервіс сам підкаже, які дані ввести, і яку ідентифікацію пройти.' : 'Для цієї послуги окремого онлайн-сервісу в реєстрі не вказано. Перегляньте послуги на порталі Дія або уточніть в органі, чи можна подати заяву дистанційно.', actions: [s.l ? { label: 'Відкрити сервіс', href: s.l } : { label: 'Портал Дія', href: 'https://diia.gov.ua/services' }] });
+      out.push({ t: 'Заповніть заяву', d: [st.name ? `Заявник: ${st.name}.` : '', svcAddrLine(st) ? `Якщо запитають адресу, вкажіть: ${svcAddrLine(st)}.` : 'Вкажіть дані, які запитає сервіс.', 'Уважно перевірте дані перед відправленням.'].filter(Boolean).join(' ') });
+      if (s.i.length) out.push({ t: 'Додайте документи', d: 'Додайте документи з переліку вище, якщо сервіс їх запитує. Частину даних сервіс може підтягнути сам.' });
+    } else if (way === 'mail') {
+      out.push({ t: `Дізнайтеся адресу органу${city ? ' у місті ' + city : ''}`, d: `Куди надсилати: ${provShort}.`, actions: [{ label: 'Знайти на карті', href: mapUrl(provShort + (city ? ' ' + city : '')) }] });
+      out.push({ t: 'Надішліть пакет документів', d: 'Надішліть заяву та копії документів рекомендованим листом з описом вкладення. Збережіть квитанцію про відправлення.' });
+    } else {
+      const acts = [{ label: 'Знайти на карті', href: mapUrl(provShort + (city ? ' ' + city : '')) }];
+      if (s.v.some(v => /ЦНАП|адміністративних послуг/i.test(v))) acts.push({ label: 'Реєстр ЦНАП', href: 'https://guide.diia.gov.ua/asc/' });
+      out.push({ t: `Знайдіть орган${city ? ' у місті ' + city : ''}`, d: `Звертайтеся до: ${s.v.length ? s.v.join('; ') : prov}.`, actions: acts });
+      out.push({ t: 'Перевірте години роботи та запис', d: 'Зателефонуйте або перегляньте сайт органу: чи потрібен попередній запис, у які дні й години приймають.' });
+      out.push({ t: 'Подайте заяву', d: `Візьміть паспорт, ІПН та оригінали документів з переліку.${st.name ? ' Заява оформлюється на: ' + st.name + '.' : ''}${svcAddrLine(st) ? ' Адреса в заяві: ' + svcAddrLine(st) + '.' : ''}` });
+    }
+    const cost = variant ? variant.cost : s.c, time = variant ? variant.time : s.t;
+    if (cost && !/^безоплатн/i.test(cost)) out.push({ t: 'Сплатіть послугу', d: `Вартість: ${cost}. Реквізити для оплати надасть орган або електронний сервіс.` });
+    out.push({ t: 'Дочекайтеся результату', d: time ? `Строк надання: ${time}.` : 'Строк надання уточніть в органі.' });
+    const prods = s.p.filter(x => !/^відмов/i.test(x));
+    if (prods.length) out.push({ t: 'Отримайте результат', d: `Ви отримаєте: ${prods.join('; ')}.` });
+    out.push({ t: 'Якщо відмовили', d: 'Ви маєте право оскаржити рішення. Підстави відмови та порядок оскарження наведено на сторінці послуги в Гіді Дія.', actions: [{ label: 'Сторінка послуги', href: guideUrl }] });
+    return out;
+  }
+
+  async function pageService(sid, eid, step) {
     const tok = routeTok;
     app.innerHTML = loadingHtml; lucide.createIcons();
     try { await loadGuide(); } catch (e) { if (tok === routeTok) loadErr(); return; }
     if (tok !== routeTok) return;
     const s = GUIDE_SERVICES[sid]; if (!s) return page404();
+    if (eid === '-') eid = '';
     const ev = eid && evById(eid);
+    const plan = svcPlan(s), st = kState(), sel = getSel(sid);
+    const base = `#/s/${sid}/${eid || '-'}`;
+    const cur = plan.steps.includes(step) ? step : plan.steps[0];
+    const miss = svcMissing(plan, st, sel);
+    if (miss && plan.steps.indexOf(miss) < plan.steps.indexOf(cur)) { location.replace(`${base}/${miss}`); return; }
+    const idx = plan.steps.indexOf(cur), nextK = plan.steps[idx + 1], prevK = plan.steps[idx - 1];
+    const backHref = prevK ? `${base}/${prevK}` : (ev ? '#/e/' + ev.id : '#/events');
     const bc = [['Головна', '#/'], ['Життєві події', '#/events']];
-    if (ev) { bc.push([ev.title, '#/e/' + ev.id]); }
+    if (ev) bc.push([ev.title, '#/e/' + ev.id]);
     bc.push([s.n]);
-    const key = 's-' + sid, done = getDone(key);
     const guideUrl = 'https://guide.diia.gov.ua/register/' + sid + '/';
-    const steps = [
-      ['Переконайтеся, що послуга вам підходить', `Для кого: ${s.a.length ? s.a.join(', ') : 'див. опис послуги'}. ${s.sp ? 'Де діє: ' + s.sp + '.' : ''}`],
-      ['Підготуйте документи', s.i.length ? 'Перелік наведено вище. Деякі документи потрібні лише в окремих випадках, тому уточніть це в органі.' : 'Окремий перелік документів не вказано. Уточніть його в органі, що надає послугу.'],
-      ['Оберіть спосіб звернення', s.w.length ? `Доступні способи: ${s.w.join(', ').toLowerCase()}.${s.l ? ' Є онлайн-сервіс за посиланням нижче.' : ''}` : (s.l ? 'Є онлайн-сервіс за посиланням нижче.' : 'Спосіб звернення уточніть в органі.')],
-      ['Подайте заяву', s.v.length ? `Куди звернутися: ${s.v.join('; ')}.` : 'Орган, що надає послугу, вказано на сторінці послуги в Гіді Дія.'],
-      ['Дочекайтеся результату', `${s.t ? 'Строк: ' + s.t + '. ' : ''}${s.c ? 'Вартість: ' + s.c + '.' : ''}`.trim() || 'Строк і вартість див. на сторінці послуги.']
-    ];
-    app.innerHTML = `<article class="container narrow-l"><div class="page-head">${crumbs(bc)}${ev ? evProg(4, ev.id) : ''}
+    const variant = plan.vars.find(v => v.id === sel.variant) || null;
+    const way = sel.way && plan.ways.some(w => w.id === sel.way) ? sel.way : plan.ways[0].id;
+    const cost = variant ? variant.cost : s.c, time = variant ? variant.time : s.t;
+    const head = `<div class="page-head">${crumbs(bc)}
       <div class="title-row"><h1>${esc(s.n)}</h1>${saveBtn('s:' + sid)}</div>
-      ${s.f && s.f !== s.n ? `<p class="official">Повна назва: ${esc(s.f)}</p>` : ''}
-      <p class="lead">${esc(s.d || s.f)}</p>
-      <div class="meta">${s.t ? `<span>${ic('clock')} Строк: ${esc(s.t)}</span>` : ''}${s.c ? `<span>${ic('banknote')} Вартість: ${esc(s.c)}</span>` : ''}</div></div>
-      ${s.p.length ? `<div class="why">${ic('file-check')}<p><b>Що ви отримаєте.</b> ${esc(s.p.join('; '))}</p></div>` : ''}
-      <section><h2 class="h2">Що знадобиться</h2>${s.i.length ? `<ul class="need">${s.i.map(n => `<li>${ic('check')}<span>${esc(n)}</span></li>`).join('')}</ul>` : '<p class="muted">Окремий перелік документів у реєстрі не вказано.</p>'}</section>
-      <section><div class="h2-row"><h2 class="h2">Покрокова інструкція</h2><span class="muted" id="progTxt"></span></div><div class="bar"><i id="progBar"></i></div>
-      <ol class="steps">${steps.map((x, i) => `<li class="step${done.includes(i) ? ' done' : ''}"><label><input type="checkbox" data-i="${i}" ${done.includes(i) ? 'checked' : ''}><span class="num">${i + 1}</span><span class="body"><b>${esc(x[0])}</b><span>${esc(x[1])}</span></span></label></li>`).join('')}</ol></section>
-      <section><h2 class="h2">Як подати і куди звернутися</h2><div class="methods">
-        ${s.l ? `<div class="method"><span class="tag">Онлайн</span><b>Електронний сервіс</b><p>Подайте заяву дистанційно, якщо вам це підходить.</p></div>` : ''}
-        ${s.w.length ? `<div class="method"><b>Способи подачі</b><p>${esc(s.w.join(', '))}</p></div>` : ''}
-        ${s.v.length ? `<div class="method"><b>Куди звернутися</b><p>${esc(s.v.join('; '))}</p></div>` : ''}</div></section>
-      <section><h2 class="h2">Часті запитання</h2>${faqHtml([['Що, якщо мені відмовили?', 'Підстави відмови та порядок оскарження наведено на сторінці послуги в Гіді Дія. Ви можете оскаржити рішення в установленому порядку.'], ['Чи однакові умови по всій країні?', 'Загальнодержавні умови однакові, але місцеві органи можуть мати власні вимоги. Уточніть у відповідному органі.'], ['Де знайти повні умови та нормативну базу?', 'На сторінці послуги в Гіді Дія є підрозділи «Як отримати і що для цього потрібно» та «Нормативна база».']])}</section>
-      <section><h2 class="h2">Корисні офіційні посилання</h2><div class="links">${extLink('Повна інформація в Гіді Дія', guideUrl, 'btn primary')}${s.l ? extLink('Онлайн-сервіс', s.l) : ''}${extLink('Портал Дія', 'https://diia.gov.ua/')}</div></section>
-      ${demoNote}
-      <p class="source">Джерело: <a href="${guideUrl}" target="_blank" rel="noopener noreferrer">Гід з державних послуг</a>, ідентифікатор послуги ${esc(sid)}. Ліцензія CC BY 4.0, текст скорочено. Дата останньої перевірки: ${CHECKED} (демо).</p>
-      <div class="actions"><a class="btn ghost" href="${ev ? '#/e/' + ev.id : '#/events'}">${ic('arrow-left')} Назад до послуг</a></div></article>`;
-    const upd = () => { const b = $$('.step input'), n = b.filter(x => x.checked).length; $('#progTxt').textContent = `Виконано ${n} з ${b.length}`; $('#progBar').style.width = (n / b.length * 100) + '%'; };
-    $('.steps').addEventListener('change', e => {
-      if (!e.target.matches('input')) return;
-      e.target.closest('.step').classList.toggle('done', e.target.checked);
-      store.set('yak_done_' + key, $$('.step input').filter(x => x.checked).map(x => +x.dataset.i)); upd();
-      if ($$('.step input').every(x => x.checked)) toast('Усі кроки виконано. Чудова робота!', 'ok');
+      <p class="lead">${esc(shorten(s.d || s.f, 230))}</p>
+      <div class="meta">${time ? `<span>${ic('clock')} ${esc(shorten(time, 70))}</span>` : ''}${cost ? `<span>${ic('banknote')} ${esc(shorten(cost, 70))}</span>` : ''}</div>
+      ${plan.steps.length > 1 ? svcProg(plan, cur, base) : ''}</div>`;
+    const source = `<p class="source">Джерело: <a href="${guideUrl}" target="_blank" rel="noopener noreferrer">Гід з державних послуг</a>, послуга № ${esc(sid)} (CC BY 4.0, текст скорочено). Кроки сформовано автоматично за даними реєстру, дата перевірки: ${CHECKED} (демо).</p>`;
+    const actions = (nextLabel, nextIcon) => `<div class="actions"><a class="btn ghost" href="${backHref}">${ic('arrow-left')} Назад</a><button class="btn primary" type="submit">${nextLabel} ${ic(nextIcon || 'arrow-right')}</button></div>`;
+    const go = k => { location.hash = `${base}/${k}`; };
+    const mount = html => { app.innerHTML = `<article class="container narrow-m">${head}${html}</article>`; lucide.createIcons(); refreshSaveUI(); };
+
+    /* --- Крок: місто --- */
+    if (cur === 'place') {
+      let picked = st.city || '';
+      mount(`<h2 class="h2">Оберіть ваше місто</h2><p class="muted sp">Від міста залежить, до якого органу звертатися. Підійде будь-яке місто чи село України.</p>
+        <form id="f" novalidate autocomplete="off">
+        <div class="field"><label for="city">Місто або село</label><div class="searchbox plain">${ic('map-pin', 'lead')}<input id="city" type="text" value="${esc(picked)}" placeholder="Почніть вводити назву" aria-describedby="cerr" /></div><p class="err" id="cerr" hidden></p></div>
+        <p class="small-label">Приклади</p><div class="chips" id="ex">${['Київ', 'Кривий Ріг', 'Дніпро', 'Львів', 'Одеса', 'Харків'].map(c => `<button type="button" class="chip${c === picked ? ' on' : ''}" data-c="${c}">${c}</button>`).join('')}</div>
+        <ul class="cities" id="cl"></ul>${actions('Продовжити')}</form>`);
+      const inp = $('#city'), err = $('#cerr');
+      const drawList = () => {
+        const q = norm(inp.value.trim());
+        const res = q ? CITIES.filter(c => norm(c[0]).includes(q) && c[0] !== inp.value.trim()).slice(0, 6) : [];
+        $('#cl').innerHTML = res.map(c => `<li><button type="button" data-c="${c[0]}">${ic('map-pin', 'sm')}<span>${c[0]}</span><small>${c[1] === 'м. Київ' ? 'місто' : c[1] + ' обл.'}</small></button></li>`).join('');
+        lucide.createIcons();
+      };
+      const pick = c => { inp.value = c; err.hidden = true; inp.classList.remove('bad'); $$('#ex .chip').forEach(b => b.classList.toggle('on', b.dataset.c === c)); drawList(); };
+      inp.addEventListener('input', () => { err.hidden = true; inp.classList.remove('bad'); $$('#ex .chip').forEach(b => b.classList.toggle('on', b.dataset.c === inp.value.trim())); drawList(); });
+      $('#f').addEventListener('click', e => { const b = e.target.closest('[data-c]'); if (b) pick(b.dataset.c); });
+      $('#f').addEventListener('submit', e => {
+        e.preventDefault();
+        const v = inp.value.trim().replace(/\s+/g, ' ');
+        const msg = !v ? 'Вкажіть ваше місто.' : v.length < 2 ? 'Назва занадто коротка.' : !/^[A-Za-zА-Яа-яІіЇїЄєҐґ'’ʼ.\-\s]+$/.test(v) ? 'Використовуйте лише літери, пробіли та дефіс.' : '';
+        if (msg) { err.textContent = msg; err.hidden = false; inp.classList.add('bad'); inp.focus(); return; }
+        const known = CITIES.find(c => c[0].toLowerCase() === v.toLowerCase());
+        const ns = Object.assign({}, st);
+        if (known) { if (ns.city !== known[0]) { ns.city = known[0]; ns.oblast = known[1]; } }
+        else if (ns.city !== v) { ns.city = v; ns.oblast = ''; }
+        kSave(ns); go(nextK);
+      });
+      return;
+    }
+
+    /* --- Крок: адреса і дані заявника --- */
+    if (cur === 'addr') {
+      mount(`<h2 class="h2">Вкажіть адресу</h2><p class="muted sp">Адреса потрібна, щоб підставити її в інструкцію. Дані зберігаються лише у вашому браузері.</p>
+        <form id="f" novalidate autocomplete="off">
+        <div class="grid2"><div class="field"><label for="oblast">Область</label><select id="oblast"><option value="">Оберіть область</option>${OBLASTS.map(o => `<option${o === st.oblast ? ' selected' : ''}>${o}</option>`).join('')}</select><p class="err" hidden></p></div>
+        <div class="field"><label for="fcity">Місто</label><input id="fcity" type="text" value="${esc(st.city || '')}" /><p class="err" hidden></p></div></div>
+        <div class="field"><label for="street">Вулиця</label><input id="street" type="text" placeholder="Наприклад, Соборна" value="${esc(st.street || '')}" /><p class="err" hidden></p></div>
+        <div class="grid2"><div class="field"><label for="house">Будинок</label><input id="house" type="text" placeholder="Наприклад, 12А" value="${esc(st.house || '')}" /><p class="err" hidden></p></div>
+        <div class="field"><label for="flat">Квартира <span class="opt-l">необовʼязково</span></label><input id="flat" type="text" inputmode="numeric" placeholder="Наприклад, 45" value="${esc(st.flat || '')}" /><p class="err" hidden></p></div></div>
+        <div class="field"><label for="name">Ваше імʼя для заяви <span class="opt-l">необовʼязково</span></label><input id="name" type="text" placeholder="Прізвище Імʼя По батькові" value="${esc(st.name || '')}" /><p class="err" hidden></p>
+        <p class="muted sp2">Не обовʼязково. Імʼя лише підставляється в інструкцію й нікуди не надсилається.</p></div>
+        ${actions('Показати інструкцію', 'list-checks')}</form>`);
+      const L = "A-Za-zА-Яа-яІіЇїЄєҐґ'’ʼ";
+      const rules = {
+        oblast: v => v ? '' : 'Оберіть область.',
+        fcity: v => v.length < 2 ? 'Вкажіть місто.' : '',
+        street: v => v.length < 2 ? 'Вкажіть назву вулиці.' : /^[\d\s]+$/.test(v) ? 'Вулиця не може складатися лише з цифр.' : '',
+        house: v => !v ? 'Вкажіть номер будинку.' : /^\d{1,4}\s?[А-Яа-яІіЇїЄєҐґA-Za-z]?(\/\d{1,3})?(-[А-Яа-яІіЇїЄєҐґA-Za-z0-9]{1,3})?$/.test(v) ? '' : 'Вкажіть номер у форматі 12, 12А або 12/2.',
+        flat: v => !v || /^\d{1,4}$/.test(v) ? '' : 'Номер квартири: лише цифри.',
+        name: v => !v || new RegExp(`^[${L}.\\-\\s]{2,80}$`).test(v) ? '' : 'Використовуйте лише літери, пробіли та дефіс.'
+      };
+      const check = id => { const el = $('#' + id), m = rules[id](el.value.trim()), p = el.parentElement.querySelector('.err'); p.textContent = m; p.hidden = !m; el.classList.toggle('bad', !!m); return !m; };
+      Object.keys(rules).forEach(id => { const el = $('#' + id); el.addEventListener('blur', () => check(id)); el.addEventListener('input', () => { if (el.classList.contains('bad')) check(id); }); });
+      $('#f').addEventListener('submit', e => {
+        e.preventDefault();
+        if (!Object.keys(rules).map(check).every(Boolean)) { const b = $('.bad'); if (b) b.focus(); return; }
+        kSave({ oblast: $('#oblast').value, city: $('#fcity').value.trim(), street: $('#street').value.trim(), house: $('#house').value.trim(), flat: $('#flat').value.trim(), name: $('#name').value.trim().replace(/\s+/g, ' ') });
+        go(nextK);
+      });
+      return;
+    }
+
+    /* --- Крок: уточнення (спосіб і варіант строку) --- */
+    if (cur === 'choice') {
+      const radio = (name, o, checked) => `<label class="opt"><input type="radio" name="${name}" value="${esc(o.id)}"${checked ? ' checked' : ''}>${o.icon ? ic(o.icon, 'oi') : ''}<span><b>${esc(o.label)}</b><small>${esc(o.desc)}</small></span></label>`;
+      mount(`<h2 class="h2">Уточніть, як вам зручніше</h2><p class="muted sp">Від відповідей залежать кроки, вартість і строк.</p>
+        <form id="f" novalidate>
+        ${plan.ways.length > 1 ? `<fieldset class="grp"><legend>Спосіб подачі</legend><div class="opts">${plan.ways.map((w, i) => radio('way', w, sel.way ? sel.way === w.id : false)).join('')}</div><p class="err" hidden id="e-way">Оберіть спосіб подачі.</p></fieldset>` : ''}
+        ${plan.vars.length > 1 ? `<fieldset class="grp"><legend>Варіант надання</legend><div class="opts">${plan.vars.map(v => radio('variant', { id: v.id, label: v.label, desc: [v.time && 'Строк: ' + v.time, v.cost && 'Вартість: ' + v.cost].filter(Boolean).join(' · ') || 'Без додаткових умов' }, sel.variant === v.id)).join('')}</div><p class="err" hidden id="e-variant">Оберіть варіант.</p></fieldset>` : ''}
+        ${actions('Показати інструкцію', 'list-checks')}</form>`);
+      const f = $('#f');
+      f.addEventListener('change', e => { const er = $('#e-' + e.target.name); if (er) er.hidden = true; });
+      f.addEventListener('submit', e => {
+        e.preventDefault();
+        const v = {}; let ok = true;
+        if (plan.ways.length > 1) { if (!f.way.value) { $('#e-way').hidden = false; ok = false; } else v.way = f.way.value; } else v.way = plan.ways[0].id;
+        if (plan.vars.length > 1) { if (!f.variant.value) { $('#e-variant').hidden = false; ok = false; } else v.variant = f.variant.value; }
+        if (!ok) return;
+        setSel(sid, v); go(nextK);
+      });
+      return;
+    }
+
+    /* --- Результат: персональна інструкція --- */
+    const wayObj = plan.ways.find(w => w.id === way);
+    const steps = svcSteps(s, { sid, st: plan.needsPlace ? st : {}, way, variant });
+    const prov = s.v[0] ? shorten(s.v[0], 70) : '';
+    const cta = way === 'online' ? (s.l ? extLink('Відкрити сервіс', s.l, 'btn primary big') : extLink('Відкрити портал Дія', 'https://diia.gov.ua/services', 'btn primary big'))
+      : `<a class="btn primary big" href="${mapUrl((prov || 'ЦНАП') + (st.city ? ' ' + st.city : ''))}" target="_blank" rel="noopener noreferrer">Знайти орган на карті${ic('map-pin')}</a>`;
+    const summary = [`Послуга: ${s.n}`, st.name && plan.needsAddr ? `Заявник: ${st.name}` : '', plan.needsPlace && svcAddrLine(st) ? `Адреса: ${svcAddrLine(st)}` : '', `Спосіб: ${wayObj.label}`, variant ? `Варіант: ${variant.label}` : '', time ? `Строк: ${time}` : '', cost ? `Вартість: ${cost}` : '', s.i.length ? 'Документи:\n- ' + s.i.join('\n- ') : ''].filter(Boolean).join('\n');
+    const answers = [plan.needsPlace && st.city ? [`Місто: ${st.city}`, `${base}/place`] : null, plan.needsAddr ? [svcAddrLine(st), `${base}/addr`] : null, plan.steps.includes('choice') ? [`${wayObj.label}${variant ? ' · ' + variant.label : ''}`, `${base}/choice`] : null].filter(Boolean);
+    mount(`<div class="addr">${ic('map-pin')}<span><b>Ваша інструкція.</b> ${esc(answers.map(a => a[0]).join(' | ') || 'Для всієї України')}</span>${answers.length ? `<a href="${answers[0][1]}">Змінити</a>` : ''}</div>
+      ${s.p.some(x => !/^відмов/i.test(x)) ? `<div class="why">${ic('file-check')}<p><b>Що ви отримаєте.</b> ${esc(s.p.filter(x => !/^відмов/i.test(x)).join('; '))}</p></div>` : ''}
+      <h2 class="h2 sub">Покрокова інструкція</h2>
+      <ol class="osteps">${steps.map((x, i) => `<li class="ostep"><span class="num">${i + 1}</span><div class="body"><b>${esc(x.t)}</b><span>${esc(x.d)}</span>${x.list && x.list.length ? `<ul class="docs">${x.list.map(d => `<li>${ic('file-text')}<span>${esc(d)}</span></li>`).join('')}</ul>` : ''}${x.actions ? `<div class="oact">${x.actions.map(a => extLink(a.label, a.href, 'btn ghost sm-btn')).join('')}</div>` : ''}</div></li>`).join('')}</ol>
+      <div class="cta-row">${cta}</div>
+      <div class="note neutral">${ic('info')}<p>Подача заяви відбувається в органі або на сайті сервісу, а не на «Як?». Тут лише підказки.</p></div>
+      <section class="sum"><div class="h2-row"><h2 class="h2">Дані для заяви</h2></div><pre id="sumtxt">${esc(summary)}</pre>
+        <div class="oact"><button class="btn ghost" id="copy" type="button">${ic('copy')} Копіювати</button><button class="btn ghost" id="print" type="button">${ic('printer')} Друкувати</button></div></section>
+      <section><h2 class="h2">Часті запитання</h2>${faqHtml([['Що, якщо мені відмовили?', 'Підстави відмови та порядок оскарження наведено на сторінці послуги в Гіді Дія. Рішення можна оскаржити в установленому порядку.'], ['Чи однакові умови по всій країні?', 'Загальнодержавні умови однакові, але місцеві органи можуть мати власні вимоги. Уточніть у відповідному органі.'], ['Де знайти нормативну базу?', 'На сторінці послуги в Гіді Дія є підрозділи «Як отримати і що для цього потрібно» та «Нормативна база».']])}</section>
+      <div class="links">${extLink('Повна інформація в Гіді Дія', guideUrl)}${s.l && way !== 'online' ? extLink('Онлайн-сервіс', s.l) : ''}${extLink('Портал Дія', 'https://diia.gov.ua/')}</div>
+      ${demoNote}${source}
+      <div class="actions"><a class="btn ghost" href="${backHref}">${ic('arrow-left')} Назад</a><a class="btn ghost" href="${ev ? '#/e/' + ev.id : '#/events'}">До списку послуг</a></div>`);
+    $('#copy').addEventListener('click', () => {
+      const t = $('#sumtxt').textContent;
+      (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => toast('Дані скопійовано', 'ok'), () => { const r = document.createRange(); r.selectNodeContents($('#sumtxt')); const sl = getSelection(); sl.removeAllRanges(); sl.addRange(r); toast('Виділено. Натисніть Ctrl+C'); });
     });
-    upd(); lucide.createIcons(); refreshSaveUI();
+    $('#print').addEventListener('click', () => window.print());
   }
 
   function pageCategory(id) {
@@ -635,7 +811,7 @@
     else if (p === 'k') pageKom(+a || 1, b);
     else if (p === 'events') pageEvents();
     else if (p === 'e') pageEvent(a, b);
-    else if (p === 's') pageService(a, b);
+    else if (p === 's') pageService(a, b, parts[3]);
     else page404();
     document.title = (p ? '' : '') + 'Як? — Просто про важливе в Україні';
     lucide.createIcons(); refreshSaveUI();
