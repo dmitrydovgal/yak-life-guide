@@ -132,31 +132,54 @@ def doc_page(i):
     return _c('page')(2, title, desc, url, body, _c('ld_script')(ld), 'article', 'documents')
 
 
+def _plural(n, a, b, c):
+    return a if n % 10 == 1 and n % 100 != 11 else (b if 2 <= n % 10 <= 4 and not 12 <= n % 100 <= 14 else c)
+
+
+def _doc_card(i):
+    """Картка документа в каталозі: тип, назва, коротко, формат/послуги, дії."""
+    d = D.DOCS[i]; svcs = D.services_of(i); f = d.get('file')
+    q = _norm(' '.join([d['title'], ' '.join(d.get('aka', [])), d['purpose'], CAT_TITLE[d['cat']]] + [_c('svc_title').get(s, '') for s in svcs]))
+    meta = ([f'{f["fmt"]}, {f["size"]}'] if f else ['Без файлу']) + [f'{len(svcs)} {_plural(len(svcs), "послуга", "послуги", "послуг")}']
+    acts = (f'<a class="btn primary sm-btn" href="{_e(f["url"])}" target="_blank" rel="noopener noreferrer" aria-label="Завантажити: {_e(d["title"])}">Завантажити</a>' if f else '') \
+        + f'<a class="btn ghost sm-btn" href="{i}/">Детальніше</a>'
+    return (f'<li class="dcard" data-cat="{d["cat"]}" data-kind="{d["kind"]}" data-n="{len(svcs)}" data-t="{_e(_norm(d["title"]))}" data-q="{_e(q)}">'
+            f'<div class="dcard-top">{_kind_badge(d["kind"])}<span class="dcard-cat">{_e(CAT_TITLE[d["cat"]])}</span></div>'
+            f'<h2 class="dcard-title"><a href="{i}/">{_e(d["title"])}</a></h2>'
+            f'<p class="dcard-text">{_e(d["plain"])}</p>'
+            f'<p class="dcard-meta">{_e(" · ".join(meta))}</p>'
+            f'<div class="dcard-actions">{acts}</div></li>')
+
+
 def docs_index():
     r = '../'; S = _c('SITE'); url = S + 'documents/'
     cnt = {c: sum(1 for i in DOC_PAGES if D.DOCS[i]['cat'] == c) for c, _ in D.CATS}
     kcnt = {k: sum(1 for i in DOC_PAGES if D.DOCS[i]['kind'] == k) for k in D.KINDS}
-    chips = ('<div class="chips" role="group" aria-label="Тема"><button type="button" class="chip on" data-f="cat" data-v="">Усі теми</button>'
-             + ''.join(f'<button type="button" class="chip" data-f="cat" data-v="{c}">{_e(t)}</button>' for c, t in D.CATS if cnt[c]) + '</div>'
-             + '<div class="chips" role="group" aria-label="Тип"><button type="button" class="chip on" data-f="kind" data-v="">Усі типи</button>'
-             + ''.join(f'<button type="button" class="chip" data-f="kind" data-v="{k}">{_e(t)}</button>' for k, t in D.KINDS.items() if kcnt[k]) + '</div>')
-    items = []
-    for i in sorted(DOC_PAGES, key=lambda i: ([c for c, _ in D.CATS].index(D.DOCS[i]['cat']), -len(D.services_of(i)), D.DOCS[i]['title'])):
-        d = D.DOCS[i]; svcs = D.services_of(i)
-        q = _norm(' '.join([d['title'], ' '.join(d.get('aka', [])), d['purpose'], CAT_TITLE[d['cat']]] + [_c('svc_title').get(s, '') for s in svcs]))
-        items.append(f'<li class="doc-card" data-cat="{d["cat"]}" data-kind="{d["kind"]}" data-q="{_e(q)}">'
-                     f'<a href="{i}/"><b>{_e(d["title"])}</b></a><p>{_e(d["plain"])}</p>'
-                     f'<p class="doc-meta">{_kind_badge(d["kind"])}<span>{_e(CAT_TITLE[d["cat"]])}</span><span>{len(svcs)} {"послуга" if len(svcs) == 1 else ("послуги" if len(svcs) < 5 else "послуг")}</span></p></li>')
-    body = f'''<div class="container post docs-hub">
+    row = lambda name, v, t, n: (f'<label class="frow"><input type="radio" name="{name}" value="{v}"{" checked" if not v else ""}>'
+                                 f'<span>{_e(t)}</span><span class="n" data-n="{name}:{v}">{n}</span></label>')
+    side = ('<aside class="shop-side" aria-label="Фільтри"><details class="side-box" id="fbox" open><summary>Фільтри</summary>'
+            '<div class="side-in">'
+            '<label class="flabel" for="dq">Пошук</label>' + _search_box('dq', 'Знайти документ', 'Прописка, пенсія, ФОП…')
+            + '<fieldset><legend>Тема</legend>' + row('cat', '', 'Усі теми', len(DOC_PAGES))
+            + ''.join(row('cat', c, t, cnt[c]) for c, t in D.CATS if cnt[c]) + '</fieldset>'
+            + '<fieldset><legend>Тип документа</legend>' + row('kind', '', 'Усі типи', len(DOC_PAGES))
+            + ''.join(row('kind', k, t, kcnt[k]) for k, t in D.KINDS.items() if kcnt[k]) + '</fieldset>'
+            + '<button type="button" class="btn ghost freset" id="freset">Скинути фільтри</button></div></details></aside>')
+    order = sorted(DOC_PAGES, key=lambda i: (-len(D.services_of(i)), D.DOCS[i]['title']))
+    body = f'''<div class="container shop">
 {_c('crumbs')([('Головна', ''), ('Документи', '')], r)}
-<h1>Документи для звернення</h1>
-<p class="post-lead">Тут зібрано заяви до державних послуг. Ви дізнаєтеся, чи потрібно заповнювати бланк заздалегідь, і зможете завантажити офіційний бланк, якщо він є. Ми даємо лише перевірені посилання на офіційні сайти.</p>
-{_search_box('dq', 'Знайти документ', 'Наприклад: прописка, пенсія, ФОП')}
-{chips}
-<p class="muted" id="dcount" aria-live="polite">Документів: {len(DOC_PAGES)}</p>
-<ul class="doc-list" id="dlist">{''.join(items)}</ul>
-<p class="empty-note" id="dempty" hidden>Нічого не знайдено. Спробуйте інше слово, наприклад «заява», «пенсія» чи «паспорт».</p>
+<div class="shop-head"><h1>Документи для звернення</h1>
+<p class="lead">Заяви до державних послуг: офіційні бланки, які можна завантажити, і пояснення, коли бланк заповнювати не потрібно. Лише перевірені посилання на офіційні сайти.</p></div>
+<div class="shop-body">
+{side}
+<section class="shop-main" aria-label="Документи">
+<div class="shop-bar"><p id="dcount" aria-live="polite">Знайдено: {len(DOC_PAGES)}</p>
+<label class="sortl">Сортувати: <select id="dsort"><option value="n">Найпотрібніші</option><option value="t">За назвою, А–Я</option></select></label></div>
+<ul class="cards" id="dlist">{''.join(_doc_card(i) for i in order)}</ul>
+<p class="empty-note" id="dempty" hidden>Нічого не знайдено. Спробуйте інше слово або <button type="button" class="linkbtn" id="freset2">скиньте фільтри</button>.</p>
 <aside class="callout"><b>Не знайшли свій документ?</b> Ми додаємо лише бланки, які змогли перевірити на офіційному сайті. Відкрийте сторінку своєї послуги — там є перелік усіх документів — або запитайте бланк в установі. Незрозуміле слово шукайте в <a href="{r}glossary/">глосарії</a>.</aside>
+</section>
+</div>
 </div>
 <script>{_FILTER_JS}</script>'''
     ld = [_c('bc_ld')([('Головна', S), ('Документи', url)]),
@@ -167,13 +190,24 @@ def docs_index():
                       url, body, _c('ld_script')(ld), 'website', 'documents')
 
 
-# Фільтр без залежностей: пошук + теми + типи. Без JS усі документи просто видно списком.
-_FILTER_JS = r"""(function(){var q=document.getElementById('dq'),L=[].slice.call(document.querySelectorAll('#dlist>li')),f={cat:'',kind:''};
+# Фільтри каталогу без залежностей: пошук, тема, тип, сортування; лічильники в сайдбарі враховують інші фільтри.
+# Без JS усі документи просто видно сіткою. На телефоні сайдбар згортається в кнопку «Фільтри».
+_FILTER_JS = r"""(function(){var q=document.getElementById('dq'),ul=document.getElementById('dlist'),L=[].slice.call(ul.children),box=document.getElementById('fbox');
+if(window.matchMedia('(max-width:860px)').matches)box.open=false;
 function n(t){return (t||'').toLowerCase().replace(/[’ʼ]/g,"'").replace(/\s+/g,' ').trim()}
-function run(){var s=n(q.value).split(' ').filter(Boolean),k=0;L.forEach(function(li){var ok=(!f.cat||li.dataset.cat===f.cat)&&(!f.kind||li.dataset.kind===f.kind)&&s.every(function(w){return li.dataset.q.indexOf(w)>-1});li.hidden=!ok;if(ok)k++});
-document.getElementById('dcount').textContent='Документів: '+k;document.getElementById('dempty').hidden=k>0}
-q.addEventListener('input',run);[].forEach.call(document.querySelectorAll('.chips .chip'),function(b){b.addEventListener('click',function(){f[b.dataset.f]=b.dataset.v;[].forEach.call(b.parentNode.children,function(x){x.classList.toggle('on',x===b);x.setAttribute('aria-pressed',x===b)});run()})});
-var p=new URLSearchParams(location.search).get('q');if(p){q.value=p;run()}})();"""
+function val(k){var x=document.querySelector('input[name='+k+']:checked');return x?x.value:''}
+function hit(li,f,s){return (!f.cat||li.dataset.cat===f.cat)&&(!f.kind||li.dataset.kind===f.kind)&&s.every(function(w){return li.dataset.q.indexOf(w)>-1})}
+function run(){var s=n(q.value).split(' ').filter(Boolean),f={cat:val('cat'),kind:val('kind')},k=0;
+L.forEach(function(li){var ok=hit(li,f,s);li.hidden=!ok;if(ok)k++});
+[].forEach.call(document.querySelectorAll('.frow .n'),function(sp){var p=sp.dataset.n.split(':'),g={cat:f.cat,kind:f.kind};g[p[0]]=p[1];
+var c=L.filter(function(li){return hit(li,g,s)}).length;sp.textContent=c;sp.parentNode.classList.toggle('zero',!c)});
+document.getElementById('dcount').textContent='Знайдено: '+k;document.getElementById('dempty').hidden=k>0;
+box.querySelector('summary').textContent='Фільтри'+((f.cat||f.kind||s.length)?' · обрано':'')}
+function sort(){var by=document.getElementById('dsort').value;L.sort(function(a,b){return by==='t'?a.dataset.t.localeCompare(b.dataset.t,'uk'):(b.dataset.n-a.dataset.n)||a.dataset.t.localeCompare(b.dataset.t,'uk')});L.forEach(function(li){ul.appendChild(li)})}
+function reset(){q.value='';[].forEach.call(document.querySelectorAll('.frow input[value=""]'),function(i){i.checked=true});run()}
+q.addEventListener('input',run);[].forEach.call(document.querySelectorAll('.frow input'),function(i){i.addEventListener('change',run)});
+document.getElementById('dsort').addEventListener('change',sort);document.getElementById('freset').addEventListener('click',reset);document.getElementById('freset2').addEventListener('click',reset);
+var p=new URLSearchParams(location.search).get('q');if(p)q.value=p;run()})();"""
 
 
 # ---------------- Глосарій ----------------
@@ -213,29 +247,55 @@ def term_page(t):
     return _c('page')(2, title, desc, url, body, _c('ld_script')(ld), 'article', 'glossary')
 
 
+UA_ALPHABET = 'АБВГҐДЕЄЖЗИІЇЙКЛМНОПРСТУФХЦЧШЩЬЮЯ'
+
+
+def _ua_key(t):
+    """Порядок українського алфавіту (str.lower() плутає Є, І, Ї, Ґ)."""
+    return [UA_ALPHABET.find(ch) if ch in UA_ALPHABET else 100 + ord(ch) for ch in t.upper()]
+
+
 def glossary_index():
     r = '../'; S = _c('SITE'); url = S + 'glossary/'
-    terms = sorted(G.TERMS, key=lambda t: t['term'].lower())
-    items = ''.join(f'<li data-q="{_e(_norm(t["term"] + " " + " ".join(t.get("aka", [])) + " " + t["plain"]))}"><a href="{t["slug"]}/"><b>{_e(t["term"])}</b></a>'
-                    f'<p>{_e(_c("cut")(t["plain"], 140))}</p></li>' for t in terms)
-    body = f'''<div class="container post docs-hub">
+    terms = sorted(G.TERMS, key=lambda t: _ua_key(t['term']))
+    groups = {}
+    for t in terms: groups.setdefault(t['term'][0].upper(), []).append(t)
+    az = ('<nav class="az" aria-label="Алфавітний покажчик"><ul>'
+          + ''.join(f'<li><a href="#l{ord(ch)}" data-l="{ord(ch)}">{ch}</a></li>' if ch in groups
+                    else f'<li><span aria-hidden="true">{ch}</span></li>' for ch in UA_ALPHABET if ch != 'Ь') + '</ul></nav>')
+    secs = ''.join(
+        f'<section class="az-group" id="l{ord(ch)}" aria-labelledby="h{ord(ch)}"><h2 class="az-letter" id="h{ord(ch)}">{ch}</h2><dl class="gl">'
+        + ''.join(f'<div class="gl-item" data-q="{_e(_norm(t["term"] + " " + " ".join(t.get("aka", [])) + " " + t["plain"]))}">'
+                  f'<dt><a href="{t["slug"]}/">{_e(t["term"])}</a>' + (f' <span class="gl-aka">({_e(", ".join(t["aka"][:2]))})</span>' if t.get('aka') else '') + '</dt>'
+                  f'<dd>{_e(_c("cut")(t["plain"], 170))}</dd></div>' for t in groups[ch])
+        + '</dl></section>' for ch in sorted(groups, key=lambda c: UA_ALPHABET.find(c)))
+    body = f'''<div class="container post glossary">
 {_c('crumbs')([('Головна', ''), ('Глосарій', '')], r)}
-<h1>Глосарій: складні слова простою мовою</h1>
-<p class="post-lead">Пояснюємо терміни, які трапляються в описах послуг і в заявах: РНОКПП, КЕП, витяг, законний представник та інші. Якщо слово має кілька значень, показуємо різницю.</p>
+<h1>Глосарій</h1>
+<p class="post-lead">Складні слова з описів державних послуг і заяв — простою мовою. Якщо слово має кілька значень, на сторінці терміна показуємо різницю.</p>
 {_search_box('gq', 'Знайти термін', 'Наприклад: РНОКПП, витяг')}
+{az}
 <p class="muted" id="gcount" aria-live="polite">Термінів: {len(terms)}</p>
-<ul class="doc-list" id="glist">{items}</ul>
+<div id="glist">{secs}</div>
 <p class="empty-note" id="gempty" hidden>Такого слова в глосарії поки немає. Спробуйте інше написання.</p>
 <aside class="callout">Шукаєте бланк заяви? Перегляньте розділ <a href="{r}documents/">«Документи»</a>.</aside>
 </div>
-<script>(function(){{var q=document.getElementById('gq'),L=[].slice.call(document.querySelectorAll('#glist>li'));function n(t){{return (t||'').toLowerCase().replace(/[’ʼ]/g,"'").replace(/\s+/g,' ').trim()}}
-q.addEventListener('input',function(){{var s=n(q.value).split(' ').filter(Boolean),k=0;L.forEach(function(li){{var ok=s.every(function(w){{return li.dataset.q.indexOf(w)>-1}});li.hidden=!ok;if(ok)k++}});document.getElementById('gcount').textContent='Термінів: '+k;document.getElementById('gempty').hidden=k>0}})}})();</script>'''
+<script>{_GLOSS_JS}</script>'''
     ld = [_c('bc_ld')([('Головна', S), ('Глосарій', url)]),
           {'@context': 'https://schema.org', '@type': 'DefinedTermSet', '@id': url, 'name': 'Глосарій «Як?»', 'url': url, 'inLanguage': 'uk',
            'hasDefinedTerm': [{'@type': 'DefinedTerm', 'name': t['term'], 'url': f'{url}{t["slug"]}/'} for t in terms]}]
     return _c('page')(1, 'Глосарій: терміни державних послуг простою мовою — Як?',
                       'Що означають РНОКПП, КЕП, витяг, декларація, законний представник, ЦНАП та інші слова з описів державних послуг. Прості пояснення й приклади.',
                       url, body, _c('ld_script')(ld), 'website', 'glossary')
+
+
+# Пошук у глосарії: ховає терміни й порожні літери; літери покажчика без збігів стають неактивними.
+_GLOSS_JS = r"""(function(){var q=document.getElementById('gq'),G=[].slice.call(document.querySelectorAll('.az-group'));
+function n(t){return (t||'').toLowerCase().replace(/[’ʼ]/g,"'").replace(/\s+/g,' ').trim()}
+q.addEventListener('input',function(){var s=n(q.value).split(' ').filter(Boolean),k=0;G.forEach(function(g){var m=0;
+[].forEach.call(g.querySelectorAll('.gl-item'),function(it){var ok=s.every(function(w){return it.dataset.q.indexOf(w)>-1});it.hidden=!ok;if(ok)m++});
+g.hidden=!m;k+=m;var a=document.querySelector('.az a[href="#'+g.id+'"]');if(a)a.classList.toggle('off',!m)});
+document.getElementById('gcount').textContent='Термінів: '+k;document.getElementById('gempty').hidden=k>0})})();"""
 
 
 def search_index():
