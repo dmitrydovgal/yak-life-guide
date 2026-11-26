@@ -254,6 +254,13 @@ def _git_dates(slug):
         return (first[-1] if first else DATE), (last[0] if last else DATE)
     except Exception:
         return DATE, DATE
+# Зафіксовані дати (_build/blog_dates.json) мають пріоритет над git: інакше будь-який спільний коміт
+# (новий пункт меню, лічильник) «оновлював» би дати всіх статей. Змінили текст статті — оновіть дату у файлі.
+import json as _json
+try:
+    _FIXED = _json.load(open(os.path.join(os.path.dirname(__file__), 'blog_dates.json'), encoding='utf-8'))
+except OSError:
+    _FIXED = {}
 for _a in ARTICLES:
-    _a['date'], _a['modified'] = _git_dates(_a['slug'])
+    _a['date'], _a['modified'] = _FIXED.get(_a['slug']) or _git_dates(_a['slug'])
     if _a['modified'] < _a['date']: _a['modified'] = _a['date']

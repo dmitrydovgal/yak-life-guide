@@ -31,7 +31,7 @@ def slugify_h(t):
 
 def page(depth, title, desc, canonical, body, extra_head='', og_type='website', active=''):
     r = '../' * depth
-    nav = [(r + 'i/', 'Усі теми', 'topics'), (r + 'e/', 'Життєві події', 'events'), (r + 'blog/' if depth else 'index.html', 'Блог', 'blog'), (r + 'about/', 'Про проєкт', 'about'), (r + '#/saved', 'Збережене', '')]
+    nav = [(r + 'i/', 'Усі теми', 'topics'), (r + 'e/', 'Життєві події', 'events'), (r + 'documents/', 'Документи', 'documents'), (r + 'glossary/', 'Глосарій', 'glossary'), (r + 'blog/' if depth else 'index.html', 'Блог', 'blog'), (r + 'about/', 'Про проєкт', 'about'), (r + '#/saved', 'Збережене', '')]
     nav_html = ''.join(f'<a href="{h}"{" class=\"active\"" if k == active else ""}>{t}</a>' for h, t, k in nav)
     menu = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>'
     return f'''<!DOCTYPE html>
@@ -70,7 +70,7 @@ def page(depth, title, desc, canonical, body, extra_head='', og_type='website', 
 <button class="burger" id="burger" type="button" aria-label="Меню" aria-expanded="false" aria-controls="nav">{menu}</button>
 </div></header>
 <main>{body}</main>
-<footer class="footer"><div class="container foot-row"><span>Як? — незалежний інформаційний гід, не державний портал. Матеріали не є юридичною консультацією.</span><span class="foot-links"><a href="{r}blog/" >Блог</a><a href="{r}i/">Усі теми</a><a href="{r}e/">Життєві події</a><a href="{r}about/">Про проєкт</a></span></div></footer>
+<footer class="footer"><div class="container foot-row"><span>Як? — незалежний інформаційний гід, не державний портал. Матеріали не є юридичною консультацією.</span><span class="foot-links"><a href="{r}blog/" >Блог</a><a href="{r}i/">Усі теми</a><a href="{r}e/">Життєві події</a><a href="{r}documents/">Документи</a><a href="{r}glossary/">Глосарій</a><a href="{r}about/">Про проєкт</a></span></div></footer>
 <script>document.getElementById('burger').onclick=function(){{var h=document.getElementById('header'),o=h.classList.toggle('open');this.setAttribute('aria-expanded',o)}}</script>
 </body>
 </html>

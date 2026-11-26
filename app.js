@@ -249,10 +249,17 @@
     lucide.createIcons(); refreshSaveUI();
   }
 
+  /* Документи й терміни глосарію: documents/search.json (будує _build/sections.py) */
+  let docIdx = null;
+  async function searchDocs(q) {
+    if (!docIdx) docIdx = await fetch('documents/search.json').then(r => r.ok ? r.json() : []);
+    const ws = q.toLowerCase().replace(/[’ʼ]/g, "'").split(/\s+/).filter(Boolean);
+    return docIdx.filter(x => { const h = (x.t + ' ' + x.a + ' ' + x.d).toLowerCase().replace(/[’ʼ]/g, "'"); return ws.every(w => h.includes(w)); });
+  }
   function pageSearch(q) {
     const tok = routeTok;
     app.innerHTML = `<div class="container narrow-l"><div class="page-head">${crumbs([['Головна', '#/'], ['Пошук']])}<h1>Результати пошуку</h1></div>
-      ${searchField('sp', 'Що вам потрібно зробити?', q)}<div id="sres" class="mt"></div><div id="sres2"></div></div>`;
+      ${searchField('sp', 'Що вам потрібно зробити?', q)}<div id="sres" class="mt"></div><div id="sres3"></div><div id="sres2"></div></div>`;
     bindSearch('#sp');
     const res = search(q), evs = searchEvents(q);
     $('#sres').innerHTML = `<p class="muted">За запитом «${esc(q)}»: ${res.length + evs.length}</p>` +
@@ -260,6 +267,9 @@
       (res.length ? `<h2 class="h2 sub">Інструкції</h2>${insList(res)}` : '');
     $('#sres2').innerHTML = `<p class="muted mt">Шукаємо в реєстрі державних послуг…</p>`;
     lucide.createIcons(); refreshSaveUI();
+    searchDocs(q).then(dl => { if (tok !== routeTok || !dl.length) return;
+      $('#sres3').innerHTML = `<h2 class="h2 sub">Документи та терміни</h2><ul class="rows">${dl.slice(0, 8).map(x => `<li class="row-wrap"><a class="row" href="${esc(x.u)}"><span class="row-main"><span class="row-title">${esc(x.t)}</span><span class="row-meta">${x.k === 'doc' ? 'Документ' : 'Глосарій'} · ${esc(x.d)}</span></span>${ic('chevron-right', 'chev')}</a></li>`).join('')}</ul>`;
+      lucide.createIcons(); }).catch(() => {});
     loadGuide().then(() => {
       if (tok !== routeTok) return;
       const sv = searchServices(q).slice(0, 30);

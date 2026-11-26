@@ -491,3 +491,24 @@ a.kp:hover i{background:#d2e3fc}
 .j-forms .form-tips{background:var(--lt);border-left:3px solid var(--bd);border-radius:8px;padding:10px 12px;margin:8px 0;font-size:14px;line-height:1.5}
 .j-forms .form-tips ul{margin:6px 0 0;padding-left:18px}
 @media (max-width:600px){.j-forms .form-item .btn{width:100%;justify-content:center}}
+/* Розділи «Документи» і «Глосарій» (_build/sections.py) */
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.big-search{height:56px;margin:8px 0 16px}
+.big-search input{font-size:17px}
+.docs-hub .chips{margin:0 0 12px}
+.docs-hub .chip{min-height:44px}
+.doc-list{list-style:none;padding:0!important;margin:8px 0 24px;display:grid;gap:10px}
+.doc-list li{border:1px solid var(--bd);border-radius:12px;padding:14px 16px;margin:0;background:#fff}
+.doc-list li a{display:block;font-size:17px;line-height:1.4}
+.doc-list li p{margin:6px 0 0;font-size:15px;color:var(--tx2)}
+.doc-meta{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;font-size:13px!important}
+.kind{display:inline-block;font-size:13px;line-height:1.4;padding:3px 10px;border-radius:999px;background:var(--blh);color:var(--bl);font-weight:500}
+.kind-staff,.kind-free{background:#e3f4e8;color:#1d6b35}
+.kind-online{background:#f1ecfb;color:#5b3aa6}
+.empty-note{background:var(--lt);border-radius:10px;padding:12px 16px}
+.terms-line{font-size:15px;line-height:1.8}
+.meanings dt{font-weight:600;margin-top:12px}
+.meanings dd{margin:4px 0 0}
+.docpage .btn.primary{min-height:48px}
+@media (max-width:1100px) and (min-width:861px){.nav a{padding:8px 10px;font-size:14px}}
+@media (max-width:600px){.docs-hub .chips{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px;margin-right:-16px}.docs-hub .chip{white-space:nowrap;flex:none}}

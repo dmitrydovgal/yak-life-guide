@@ -155,27 +155,33 @@
     var meta = x.act ? 'Посилання веде на текст нормативного акта, а не на окремий файл. Бланк — ' + esc(x.where) + '.' :
       [[x.fmt, x.size].filter(Boolean).join(', '), 'файл із сайту ' + esc(x.host)].filter(Boolean).join(' · ');
     return '<div class="form-item"><span class="form-tag' + (x.official === false ? ' warn' : '') + '">' + tag + '</span><b>' + esc(x.title) + '</b>' +
+      (x.when ? '<span>' + esc(x.when) + '</span>' : '') +
       '<a class="btn ghost sm-btn" href="' + esc(x.url) + '" target="_blank" rel="noopener noreferrer">' + btn + '</a>' +
-      '<small>' + meta + '</small><small>Форму затверджено: <a href="' + esc(x.srcUrl) + '" target="_blank" rel="noopener noreferrer">' + esc(x.src) + '</a> · перевірено ' + esc(x.checkedText) + '</small></div>';
+      '<small>' + meta + '</small><small>Форму затверджено: <a href="' + esc(x.srcUrl) + '" target="_blank" rel="noopener noreferrer">' + esc(x.src) + '</a> · перевірено ' + esc(x.checkedText) + '</small>' +
+      (x.docHref ? '<small><a href="' + esc(x.docHref) + '">Що це за документ і як його використати</a></small>' : '') + '</div>';
+  }
+  function formTips(f) {
+    return (f.tips || []).length ? '<div class="form-tips"><b>Порада від «Як?»</b> <span class="muted">— наше пояснення, не офіційний документ</span><ul>' + f.tips.map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') + '</ul></div>' : '';
   }
   function formsHtml() {
     var f = J.forms; if (!f) return '';
-    if (f.noBlank) return '<section class="j-sec j-forms"><h3>Бланк заяви</h3><p><b>Чи потрібно заповнювати?</b> ' + esc(f.noBlank) + '</p></section>';
-    var bl = f.blanks || [], ex = f.examples || [], c = channel(), many = bl.length > 1;
+    var tips = formTips(f), note = f.note ? '<p class="muted">' + esc(f.note) + '</p>' : '';
+    if (f.noBlank) return '<section class="j-sec j-forms"><h3>Бланк заяви</h3><p><b>Чи потрібно заповнювати?</b> ' + esc(f.noBlank) + '</p>' + tips + note +
+      (f.docHref ? '<p><a href="' + esc(f.docHref) + '">' + (f.kind === 'free' ? 'Як написати заяву в довільній формі' : 'Детальніше про цей документ') + '</a></p>' : '') + '</section>';
+    var bl = f.blanks || [], ex = f.examples || [], also = f.also || [], c = channel(), many = bl.length > 1;
     var cards = bl.map(function (x) { return (x.who ? '<p class="form-who">' + esc(x.who) + ':</p>' : '') + formCard(x, 'blank'); }).join('') +
-      ex.map(function (x) { return formCard(x, 'example'); }).join('');
-    var tips = (f.tips || []).length ? '<div class="form-tips"><b>Порада від «Як?»</b> <span class="muted">— наше пояснення, не офіційний документ</span><ul>' + f.tips.map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') + '</ul></div>' : '';
-    var note = f.note ? '<p class="muted">' + esc(f.note) + '</p>' : '';
+      ex.map(function (x) { return formCard(x, 'example'); }).join('') +
+      (also.length ? '<p class="form-who">Також знадобиться:</p>' + also.map(function (x) { return formCard(x, 'blank'); }).join('') : '');
     /* Онлайн чи застосунок: паперовий бланк не потрібен — коротко, файли під спойлером */
     if (c && (c.id === 'online' || c.id === 'app'))
       return '<section class="j-sec j-forms"><h3>Бланк заяви</h3><p><b>Паперовий бланк не потрібен.</b> Ви подаєте ' + (c.id === 'app' ? 'через застосунок, тому заяву заповните в застосунку.' : 'онлайн, тому заяву заповните на сайті.') +
         (c.id === 'online' && c.url ? ' <a href="' + esc(c.url) + '" target="_blank" rel="noopener noreferrer">Подати заяву онлайн</a>' : '') + '</p>' +
         '<details class="j-more"><summary>Усе ж потрібен паперовий бланк?</summary>' + cards + tips + note + '</details></section>';
     var how = c && PAPER_HOW[c.id] ? PAPER_HOW[c.id] : 'обраним способом';
-    return '<section class="j-sec j-forms" id="j-forms"><h3>' + (many ? 'Бланки заяви' : 'Бланк заяви') + '</h3>' +
+    return '<section class="j-sec j-forms" id="j-forms"><h3>' + (many || also.length ? 'Бланки заяви' : 'Бланк заяви') + '</h3>' +
       '<p><b>Чи потрібно заповнювати?</b> Так, заява подається за офіційною формою. Бланк можна роздрукувати й заповнити заздалегідь.</p>' +
       (many ? '<p><b>Який бланк узяти?</b> Це залежить від вашої ситуації:</p>' : '') + cards +
-      '<p><b>Що робити після заповнення?</b> Перевірте дані й подайте заяву ' + how + ' разом з іншими документами зі списку вище.</p>' + tips + note + '</section>';
+      '<p><b>Що робити після заповнення?</b> Перевірте дані й подайте ' + (also.length ? 'бланки' : 'заяву') + ' ' + how + ' разом з іншими документами зі списку вище.</p>' + tips + note + '</section>';
   }
 
   function stepsHtml() {

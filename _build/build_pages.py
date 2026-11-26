@@ -168,6 +168,7 @@ def service_page(sid):
 <p class="post-cat">{e(ev["title"])}</p>
 <h1>{e(n)}</h1>
 {journey.render_static(j, lead_html)}
+{sections.terms_line(sid, '../../')}
 {FOOT}
 <p class="source">Джерело даних: <a href="https://guide.diia.gov.ua/" target="_blank" rel="noopener noreferrer">Гід з державних послуг</a> (відкритий реєстр, ліцензія CC BY 4.0), текст скорочено. Сторінку сформовано {human(DATE)}.</p>
 </article>
@@ -181,6 +182,10 @@ def service_page(sid):
     sdesc = _svc_desc(sid)
     if _dc[sdesc] > 1: sdesc = f'№ {sid}. ' + cut(n, 55) + ': ' + cut(re.sub(r'\s+', ' ', z.get('short_description_plain') or full), 90)
     return page(2, title, sdesc, url, body, ld_script(ld), 'article', 'events')
+
+import sections   # розділи «Документи» і «Глосарій» (дані: docs_db.py, glossary.py)
+sections.init(page=page, write=write, e=e, SITE=SITE, crumbs=crumbs, bc_ld=bc_ld, ld_script=ld_script, cut=cut,
+              svc_url=svc_url, svc_title=svc_title, REG=REG, FOOT=FOOT, URLS=URLS)
 
 for sid in svc_url:
     write(svc_url[sid] + 'index.html', service_page(sid)); URLS.append(SITE + svc_url[sid])
@@ -356,6 +361,8 @@ def about_page():
 write('about/index.html', about_page()); URLS.append(SITE + 'about/')
 
 # ---------- sitemap ----------
+_nd, _nt = sections.build()
+print(f'documents: {_nd} pages; glossary: {_nt} terms')
 seen = []; [seen.append(u) for u in URLS if u not in seen]
 write('sitemap.xml', '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' + ''.join(f'<url><loc>{u}</loc>{_lm(u)}</url>\n' for u in seen) + '</urlset>\n')
 print(len(seen), 'urls;', len(svc_url), 'services;', len(INS), 'instructions;', len(EVENTS), 'events')

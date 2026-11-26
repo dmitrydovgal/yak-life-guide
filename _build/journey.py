@@ -611,16 +611,27 @@ def _form_card(x, kind):
             else ' · '.join(filter(None, [', '.join(filter(None, [x.get('fmt'), x.get('size')])), 'файл із сайту ' + e(x['host'])])))
     return ((f'<p class="form-who">{e(x["who"])}:</p>' if x.get('who') else '')
             + f'<div class="form-item"><span class="form-tag{" warn" if x.get("official") is False else ""}">{tag}</span><b>{e(x["title"])}</b>'
+            + (f'<span>{e(x["when"])}</span>' if x.get('when') else '')
             + f'<a class="btn ghost sm-btn" href="{e(x["url"])}" target="_blank" rel="noopener noreferrer">{btn}</a>'
-            + f'<small>{meta}</small><small>Форму затверджено: {_a(x["srcUrl"], e(x["src"]))} · перевірено {e(x["checkedText"])}</small></div>')
+            + f'<small>{meta}</small><small>Форму затверджено: {_a(x["srcUrl"], e(x["src"]))} · перевірено {e(x["checkedText"])}</small>'
+            + (f'<small><a href="{e(x["docHref"])}">Що це за документ і як його використати</a></small>' if x.get('docHref') else '') + '</div>')
+
+
+def _form_tips(f):
+    if not f.get('tips'): return ''
+    return ('<div class="form-tips"><b>Порада від «Як?»</b> <span class="muted">— наше пояснення, не офіційний документ</span><ul>'
+            + ''.join(f'<li>{e(t)}</li>' for t in f['tips']) + '</ul></div>')
 
 
 def _forms_static(j):
-    """Бланк заяви: чи потрібно заповнювати, який бланк узяти, що робити далі (дані з forms.py)."""
+    """Бланк заяви: чи потрібно заповнювати, який бланк узяти, що робити далі (дані з docs_db через forms.py)."""
     f = j['forms']
+    note = f'<p class="muted">{e(f["note"])}</p>' if f.get('note') else ''
     if f.get('noBlank'):
-        return f'<div class="j-forms"><h2 id="forms">Бланк заяви</h2><p><b>Чи потрібно заповнювати?</b> {e(f["noBlank"])}</p></div>'
-    bl, ex = f.get('blanks', []), f.get('examples', [])
+        more = (f'<p><a href="{e(f["docHref"])}">{"Як написати заяву в довільній формі" if f.get("kind") == "free" else "Детальніше про цей документ"}</a></p>'
+                if f.get('docHref') else '')
+        return f'<div class="j-forms"><h2 id="forms">Бланк заяви</h2><p><b>Чи потрібно заповнювати?</b> {e(f["noBlank"])}</p>{_form_tips(f)}{note}{more}</div>'
+    bl, ex, also = f.get('blanks', []), f.get('examples', []), f.get('also', [])
     many = len(bl) > 1
     chs = {c['id']: c for c in j['channels']}
     on = chs.get('online') if (chs.get('online') or {}).get('url') else None
@@ -628,15 +639,13 @@ def _forms_static(j):
     need = 'Так, якщо подаєте заяву на папері: її заповнюють за офіційною формою.'
     if on: need += ' Якщо подаєте онлайн, бланк не потрібен — заяву заповните на сайті (' + _a(on['url'], 'подати заяву онлайн') + ').'
     elif 'app' in chs: need += ' Якщо подаєте через застосунок, бланк не потрібен — заяву заповните в застосунку.'
-    out = [f'<h2 id="forms">{"Бланки заяви" if many else "Бланк заяви"}</h2>', f'<p><b>Чи потрібно заповнювати?</b> {need}</p>']
+    out = [f'<h2 id="forms">{"Бланки заяви" if many or also else "Бланк заяви"}</h2>', f'<p><b>Чи потрібно заповнювати?</b> {need}</p>']
     if many: out.append('<p><b>Який бланк узяти?</b> Це залежить від вашої ситуації:</p>')
     out += [_form_card(x, 'blank') for x in bl] + [_form_card(x, 'example') for x in ex]
-    out.append('<p><b>Що робити після заповнення?</b> Перевірте дані й подайте заяву ' + (' або '.join(paper) if paper else 'в установу')
-               + ' разом з іншими документами зі списку вище.</p>')
-    if f.get('tips'):
-        out.append('<div class="form-tips"><b>Порада від «Як?»</b> <span class="muted">— наше пояснення, не офіційний документ</span><ul>'
-                   + ''.join(f'<li>{e(t)}</li>' for t in f['tips']) + '</ul></div>')
-    if f.get('note'): out.append(f'<p class="muted">{e(f["note"])}</p>')
+    if also: out += ['<p class="form-who">Також знадобиться:</p>'] + [_form_card(x, 'blank') for x in also]
+    out.append('<p><b>Що робити після заповнення?</b> Перевірте дані й подайте ' + ('бланки' if also else 'заяву') + ' '
+               + (' або '.join(paper) if paper else 'в установу') + ' разом з іншими документами зі списку вище.</p>')
+    out.append(_form_tips(f) + note)
     return '<div class="j-forms">' + ''.join(out) + '</div>'
 
 
