@@ -50,11 +50,11 @@ for f in glob.glob(os.path.join(ROOT, 's', '*', 'index.html')):
         if v.get('days') and v['days'] > 400: issues['huge_time'].append((sid, tm))
     # Групи «Що уточнити»
     for x in j['verify']:
-        k = ('cost_unknown' if 'Вартість у реєстрі не зазначена' in x else 'time_unknown' if 'Строк надання в реєстрі не зазначений' in x else
-             'time_contradictory' if 'суперечливо' in x or 'незрозуміло' in x else 'online_unconfirmed' if 'підтвердженого посилання на сервіс' in x or 'посилання на сервіс не підтверджене' in x else
-             'no_channel' if 'Спосіб подачі' in x else 'docs_missing' if 'Перелік документів' in x else
-             'cost_stale_std' if 'залежить від прожиткового' in x else 'cost_recalculated' if 'стару суму' in x else
-             'local_service' if 'місцева послуга' in x.lower() else 'other')
+        k = ('cost_unknown' if 'скільки коштує послуга' in x else 'time_unknown' if 'скільки часу займає послуга' in x else
+             'time_contradictory' if 'суперечливо' in x or 'незрозуміло' in x else 'online_unconfirmed' if 'надійного посилання на сервіс' in x else
+             'no_channel' if 'як подати заяву' in x else 'docs_missing' if 'переліку документів' in x else
+             'cost_stale_std' if 'залежить від прожиткового' in x else 'cost_recalculated' if 'стару ціну' in x else
+             'local_service' if 'надає ваша громада' in x.lower() else 'other')
         verify_groups[k].append(sid)
     # Фінанси
     raw = R[sid].get('variations') or []

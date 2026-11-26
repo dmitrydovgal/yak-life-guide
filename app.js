@@ -125,7 +125,7 @@
     return out.sort((a, b) => b[0] - a[0]).map(x => x[1]);
   }
   const empty = (title, text, cta) => `<div class="empty">${ic('search-x')}<h3>${esc(title)}</h3><p>${esc(text)}</p>${cta || ''}</div>`;
-  const demoNote = `<div class="note">${ic('info')}<p><b>Важливо.</b> Інформація має довідковий характер і не є юридичною консультацією. Актуальні умови уточнюйте на офіційних сайтах.</p></div>`;
+  const demoNote = `<div class="note">${ic('info')}<p><b>Важливо.</b> Ми пояснюємо простими словами, але це не юридична консультація. Перед зверненням перевірте умови на офіційному сайті.</p></div>`;
   const faqHtml = faq => `<div class="acc">${faq.map(([q, a], i) => `<div class="acc-item"><button class="acc-btn" type="button" aria-expanded="false" data-acc>${esc(q)}${ic('chevron-down')}</button><div class="acc-panel" hidden><p>${esc(a)}</p></div></div>`).join('')}</div>`;
   const extLink = (label, url, cls = 'btn ghost') => `<a class="${cls}" href="${url}" target="_blank" rel="noopener noreferrer">${esc(label)}${ic('external-link')}</a>`;
   const searchField = (id, ph, val = '') => `<form class="searchbox" id="${id}" role="search" autocomplete="off">
@@ -190,7 +190,7 @@
       </div></section>
       <section class="container home-lists">
         <div><h2 class="h2">Популярні запитання</h2><ul class="qlist">${POPULAR_Q.map(([q, id]) => `<li><a href="#/i/${id}">${ic('circle-help')}<span>${esc(q)}</span></a></li>`).join('')}</ul></div>
-        <div><h2 class="h2">Найбільш затребувані інструкції</h2><ol class="toplist">${pop.map((x, i) => `<li><a href="#/i/${x.id}"><span class="rank">${i + 1}</span><span class="tl-main"><b>${esc(x.title)}</b><small>${esc(catById(x.cat).title)} · ${esc(x.time)}</small></span>${ic('chevron-right', 'chev')}</a></li>`).join('')}</ol></div>
+        <div><h2 class="h2">Найпопулярніші інструкції</h2><ol class="toplist">${pop.map((x, i) => `<li><a href="#/i/${x.id}"><span class="rank">${i + 1}</span><span class="tl-main"><b>${esc(x.title)}</b><small>${esc(catById(x.cat).title)} · ${esc(x.time)}</small></span>${ic('chevron-right', 'chev')}</a></li>`).join('')}</ol></div>
       </section>
       <section class="container home-blog"><div class="h2-row"><h2 class="h2">З блогу</h2><a href="blog/">Усі статті</a></div>
         <ul class="blog-grid">${BLOG.slice(0, 3).map(b => `<li><a class="post-card" href="blog/${b.slug}/"><span class="post-cat">${esc(b.cat)}</span><b>${esc(b.title)}</b><small>${b.min} хв читання</small></a></li>`).join('')}</ul></section>`;
@@ -223,7 +223,7 @@
       <p class="lead">З чим люди звертаються найчастіше.</p></div>
       ${insList(POPULAR.map(id => INS[id]))}
       <h2 class="h2 mt">Загальні запитання</h2>
-      ${faqHtml([['Чи це офіційний сервіс?', 'Ні. «Як?» — незалежний інформаційний гід. Ми пояснюємо, як діяти, й ведемо на офіційні сервіси.'], ['Чи потрібно реєструватися?', 'Ні. Збережені інструкції зберігаються лише у вашому браузері.'], ['Чи можна покладатися на інструкції?', 'Матеріали мають інформаційний характер. Завжди звіряйтеся з офіційними джерелами.']])}</div>`;
+      ${faqHtml([['Чи це офіційний сервіс?', 'Ні. «Як?» — незалежний інформаційний гід. Ми пояснюємо, як діяти, й ведемо на офіційні сервіси.'], ['Чи потрібно реєструватися?', 'Ні. Збережені плани й інструкції зберігаються лише на вашому пристрої, у цьому браузері.'], ['Чи можна покладатися на інструкції?', 'Ми складаємо інструкції за офіційними джерелами, але правила іноді змінюються. Перед зверненням перевірте умови на офіційному сайті — посилання є на кожній сторінці.']])}</div>`;
     refreshSaveUI();
   }
 
@@ -232,7 +232,7 @@
       <p class="lead">«Як?» — цифровий помічник, який пояснює, як вирішувати повсякденні життєві питання в Україні.</p></div>
       <div class="prose"><h3>Наш принцип</h3><p>Мінімум дій від вас, максимум користі. Ми питаємо лише те, що впливає на результат, і показуємо найкоротший шлях першим.</p>
       <h3>Що це не є</h3><p>Це не державний портал, не платіжний сервіс і не юридична консультація. Матеріали мають інформаційний характер: актуальні умови перевіряйте в офіційних джерелах.</p>
-      <h3>Ваші дані</h3><p>Ми не просимо ПІБ, телефон чи паспорт. Збережені інструкції та введена адреса зберігаються лише у вашому браузері.</p></div>
+      <h3>Ваші дані</h3><p>Ми не просимо ПІБ, телефон чи паспорт. Збережені плани, інструкції та введена адреса зберігаються лише на вашому пристрої, у цьому браузері.</p></div>
       ${demoNote}<a class="btn primary mt" href="#/topics">Переглянути всі теми</a></div>`;
   }
 
@@ -244,8 +244,8 @@
     const have = typeof GUIDE_SERVICES !== 'undefined';
     const list = ids.map(id => id.startsWith('s:') ? (have && GUIDE_SERVICES[id.slice(2)] ? svcRow(id.slice(2)) : '') : (INS[id] ? insRow(INS[id]) : '')).filter(Boolean);
     app.innerHTML = `<div class="container narrow-l"><div class="page-head">${crumbs([['Головна', '#/'], ['Збережене']])}<h1>Збережене</h1>
-      <p class="lead">Інструкції, які ви зберегли в цьому браузері.</p></div>
-      ${list.length ? `<ul class="rows">${list.join('')}</ul>` : empty('Тут поки порожньо', 'Натисніть «Зберегти інструкцію» на сторінці інструкції, і вона зʼявиться тут.', `<a class="btn primary" href="#/topics">Знайти інструкцію</a>`)}</div>`;
+      <p class="lead">Плани та інструкції, які ви зберегли на цьому пристрої.</p></div>
+      ${list.length ? `<ul class="rows">${list.join('')}</ul>` : empty('Тут поки порожньо', 'Щоб зберегти, натисніть «Зберегти план» на сторінці послуги або «Зберегти інструкцію» в інструкції. Збережене з’явиться тут.', `<a class="btn primary" href="#/topics">Знайти інструкцію</a>`)}</div>`;
     lucide.createIcons(); refreshSaveUI();
   }
 
@@ -263,10 +263,10 @@
     loadGuide().then(() => {
       if (tok !== routeTok) return;
       const sv = searchServices(q).slice(0, 30);
-      $('#sres2').innerHTML = sv.length ? `<h2 class="h2 sub">Державні послуги (Гід Дія)</h2>${svcList(sv)}` : '';
-      if (!res.length && !evs.length && !sv.length) $('#sres').innerHTML += empty('Нічого не знайдено', 'Спробуйте інші слова або перегляньте всі теми.', `<a class="btn primary" href="#/topics">Усі теми</a>`);
+      $('#sres2').innerHTML = sv.length ? `<h2 class="h2 sub">Державні послуги</h2>${svcList(sv)}` : '';
+      if (!res.length && !evs.length && !sv.length) $('#sres').innerHTML += empty('Нічого не знайдено', 'Спробуйте написати інакше, наприклад одним словом: «паспорт», «субсидія», «ФОП». Або перегляньте всі теми.', `<a class="btn primary" href="#/topics">Усі теми</a>`);
       lucide.createIcons(); refreshSaveUI();
-    }).catch(() => { if (tok === routeTok) { $('#sres2').innerHTML = ''; if (!res.length && !evs.length) $('#sres').innerHTML += empty('Нічого не знайдено', 'Спробуйте інші слова або перегляньте всі теми.', `<a class="btn primary" href="#/topics">Усі теми</a>`); lucide.createIcons(); } });
+    }).catch(() => { if (tok === routeTok) { $('#sres2').innerHTML = ''; if (!res.length && !evs.length) $('#sres').innerHTML += empty('Нічого не знайдено', 'Спробуйте написати інакше, наприклад одним словом: «паспорт», «субсидія», «ФОП». Або перегляньте всі теми.', `<a class="btn primary" href="#/topics">Усі теми</a>`); lucide.createIcons(); } });
   }
 
   /* ---------- Життєві події (дані Гіду Дія) ---------- */
@@ -591,7 +591,7 @@
     const draw = () => {
       const q = $('#cq').value.trim();
       const list = q ? search(q, id) : all;
-      $('#cres').innerHTML = list.length ? insList(list) : empty('У цьому розділі нічого не знайдено', 'Спробуйте інші слова або перегляньте всі теми.', `<a class="btn ghost" href="#/search/${encodeURIComponent(q)}">Шукати на всьому сайті</a>`);
+      $('#cres').innerHTML = list.length ? insList(list) : empty('У цьому розділі нічого не знайдено', 'Спробуйте написати інакше, наприклад одним словом: «паспорт», «субсидія», «ФОП». Або перегляньте всі теми.', `<a class="btn ghost" href="#/search/${encodeURIComponent(q)}">Шукати на всьому сайті</a>`);
       refreshSaveUI();
     };
     bindFilter('#cq', draw); draw();
@@ -656,7 +656,6 @@
     const summary = [`Інструкція: ${base0.title}`, opt ? `Ситуація: ${opt.label}` : '', plan.place && city ? `Адреса: ${plan.addr ? svcAddrLine(st) : city}` : '', plan.addr && st.name ? `Заявник: ${st.name}` : '', `Орієнтовний час: ${ins.time}`, ins.needs.length ? 'Документи:\n- ' + ins.needs.join('\n- ') : ''].filter(Boolean).join('\n');
     const cta = m.where && city ? `<a class="btn primary btn-lg" href="${mapUrl(m.where + ' ' + city)}" target="_blank" rel="noopener noreferrer">Знайти ${esc(m.where)} на карті${ic('map-pin')}</a>` : (ins.links[0] ? extLink('Відкрити: ' + ins.links[0][0], ins.links[0][1], 'btn primary btn-lg') : '');
     mount(`${answers.length ? `<div class="addr">${ic('map-pin')}<span><b>Ваша інструкція.</b> ${esc(answers.map(x => x[0]).join(' | '))}</span><a href="${answers[0][1]}">Змінити</a></div>` : ''}
-      ${ins.why ? `<div class="why">${ic('lightbulb')}<p><b>Чому спершу так.</b> ${esc(ins.why)}</p></div>` : ''}
       <section><h2 class="h2">Що знадобиться</h2><ul class="docs">${ins.needs.map(n => `<li>${ic('file-text')}<span>${esc(n)}</span></li>`).join('')}</ul></section>
       <h2 class="h2 sub">Покрокова інструкція</h2>
       <ol class="osteps">${all.map((x, i) => `<li class="ostep"><span class="num">${i + 1}</span><div class="body"><b>${esc(x.t)}</b><span>${esc(x.d)}</span>${x.actions ? `<div class="oact">${x.actions.map(a => extLink(a.label, a.href, 'btn ghost sm-btn')).join('')}</div>` : ''}</div></li>`).join('')}</ol>

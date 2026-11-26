@@ -83,7 +83,7 @@
     if (q.id === 'variant' && J.decide === 'speed') {
       var fast = J.variants.filter(function (v) { return (v.tags || []).indexOf('найшвидше') > -1; })[0];
       var cheap = J.variants.filter(function (v) { return (v.tags || []).indexOf('найдешевше') > -1; })[0];
-      if (fast && cheap && fast.id !== cheap.id) tip = '<p class="j-tip">Порада: якщо результат не терміновий, оберіть «' + esc(cheap.label) + '» (' + esc(cheap.cost) + '). Якщо потрібно швидше — «' + esc(fast.label) + '» (' + esc(fast.time) + ').</p>';
+      if (fast && cheap && fast.id !== cheap.id) tip = '<p class="j-tip">Порада: якщо результат не терміновий, оберіть «' + esc(cheap.label) + '» (' + esc(cheap.cost) + '). Якщо потрібно швидше, оберіть «' + esc(fast.label) + '» (' + esc(fast.time) + ').</p>';
     }
     var chosen = S.ans[q.id] && byId(q.options, S.ans[q.id]);
     if (chosen && editing !== q.id) {
@@ -101,13 +101,13 @@
     var out = '';
     if (S.ans.profile && !eligible()) {
       var al = J.profile.allowed.map(function (a) { return J.profile.labels[a]; }).join(', ');
-      out += '<section class="j-sec j-warn"><h3>Ця послуга, ймовірно, не для вас</h3><p>Її можуть отримати: ' + esc(al) + '. Якщо ви звертаєтеся від імені іншої особи чи організації — змініть відповідь вище.</p>' +
-        (J.next && J.next.length ? '<p>Подивіться пов’язані послуги:</p><ul>' + J.next.slice(0, 4).map(function (n) { return '<li><a href="' + esc(n.u) + '">' + esc(n.t) + '</a></li>'; }).join('') + '</ul>' : '') + '</section>';
+      out += '<section class="j-sec j-warn"><h3>Схоже, ця послуга не для вас</h3><p>Її можуть отримати: ' + esc(al) + '. Якщо ви звертаєтеся від імені іншої людини чи організації, змініть відповідь вище.</p>' +
+        (J.next && J.next.length ? '<p>Можливо, вам підійде одна з цих послуг:</p><ul>' + J.next.slice(0, 4).map(function (n) { return '<li><a href="' + esc(n.u) + '">' + esc(n.t) + '</a></li>'; }).join('') + '</ul>' : '') + '</section>';
     }
     if (J.ed && (J.ed.fit || J.ed.notFit)) {
-      out += '<details class="j-more j-fit"><summary>Кому підходить і коли — ні</summary>' +
+      out += '<details class="j-more j-fit"><summary>Кому підходить, а кому ні</summary>' +
         (J.ed.fit ? '<ul>' + J.ed.fit.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>' : '') +
-        (J.ed.notFit ? '<p class="muted">Особливості:</p><ul>' + J.ed.notFit.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>' : '') + '</details>';
+        (J.ed.notFit ? '<p class="muted">Винятки й особливі випадки:</p><ul>' + J.ed.notFit.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>' : '') + '</details>';
     }
     return out;
   }
@@ -118,7 +118,7 @@
     if (ro && J.questions.some(function (q) { return q.id === 'role'; })) out.push('<li><b>Хто подає:</b> ' + esc(ro.label.toLowerCase()) + '.</li>');
     if (v && J.variants.length > 1) {
       var why = (v.tags || []).length ? ' Це ' + v.tags.join(' і ') + ' з доступних варіантів.' : '';
-      out.push('<li><b>Варіант:</b> ' + esc(v.label) + (v.time ? '. Строк: ' + esc(v.time) : '') + (v.cost ? '. Вартість: ' + esc(v.cost) : '') + '.' + why + '</li>');
+      out.push('<li><b>Варіант:</b> ' + esc(v.label) + (v.time ? '. Скільки часу: ' + esc(v.time) : '') + (v.cost ? '. Ціна: ' + esc(v.cost) : '') + '.' + why + '</li>');
     }
     if (c && J.channels.length > 1) out.push('<li><b>Спосіб подачі:</b> ' + esc(c.label.toLowerCase()) + '. ' + esc(c.desc) + '</li>');
     var blocks = J.ed && J.ed.blocks ? J.ed.blocks.filter(function (b) { return b.kind !== 'docs' && blockOn(b); }) : [];
@@ -128,22 +128,22 @@
     }).join('');
     if (!out.length && !bl) return '';
     return '<section class="j-sec"><h3>Ваша ситуація</h3>' + (out.length ? '<ul class="j-rec">' + out.join('') + '</ul>' : '') + bl +
-      (out.length ? '<p class="muted">Ґрунтується на даних реєстру' + (J.ed ? ' та офіційної сторінки послуги' : '') + '. Перед подачею звірте умови в офіційному джерелі.</p>' : '') + '</section>';
+      (out.length ? '<p class="muted">Ми склали це за даними державного реєстру' + (J.ed ? ' та офіційної сторінки послуги' : '') + '. Перед подачею перевірте умови в офіційному джерелі.</p>' : '') + '</section>';
   }
 
   function docsHtml() {
     if (J.ed && J.ed.docsReplace && !edDocs().length) return '';
-    if ((!J.docs.length || (J.ed && J.ed.docsReplace)) && !edDocs().length) return J.channels.length ? '<section class="j-sec"><h3>Документи</h3><p>Перелік документів у реєстрі не наведено. Уточніть його в органі перед зверненням.</p></section>' : '';
+    if ((!J.docs.length || (J.ed && J.ed.docsReplace)) && !edDocs().length) return J.channels.length ? '<section class="j-sec"><h3>Документи</h3><p>Ми не знайшли переліку документів. Перш ніж іти, запитайте в установі, які документи взяти.</p></section>' : '';
     var f = docsFor(), p = progress();
     return '<section class="j-sec" id="j-docs"><h3>Підготуйте документи <span class="muted">' + p.ready + ' з ' + p.need + '</span></h3>' +
       '<ul class="j-docs">' + f.list.map(function (x) {
         var d = x.d, na = !!S.na[x.i];
         return '<li class="' + (na ? 'na' : '') + '"><label><input type="checkbox" data-doc="' + x.i + '"' + (S.docs[x.i] ? ' checked' : '') + (na ? ' disabled' : '') + '><span>' + esc(d.t) +
-          (d.why ? '<small>Навіщо: ' + esc(d.why) + '</small>' : '') + (d.form ? '<small>Форма: ' + esc(d.form) + '</small>' : '') +
-          (d.cond ? '<small>Лише якщо: ' + esc(d.cond) + '</small>' : '') + (d.rep && !d.cond ? '<small>Для представника</small>' : '') + '</span></label>' +
-          (d.cond ? '<button type="button" class="j-na" data-na="' + x.i + '">' + (na ? 'Стосується мене' : 'Мене не стосується') + '</button>' : '') + '</li>';
+          (d.why ? '<small>Навіщо: ' + esc(d.why) + '</small>' : '') + (d.form ? '<small>' + esc(/^[А-ЯІЇЄҐ]/.test(d.form) ? d.form : 'Форма: ' + d.form) + '</small>' : '') +
+          (d.cond ? '<small>' + esc(d.condText || 'Лише якщо: ' + d.cond) + '</small>' : '') + (d.rep && !d.cond ? '<small>Потрібен, якщо заяву подає представник.</small>' : '') + '</span></label>' +
+          (d.cond ? '<button type="button" class="j-na" data-na="' + x.i + '">' + (na ? 'Повернути до списку' : 'Мені не потрібен') + '</button>' : '') + '</li>';
       }).join('') + '</ul>' +
-      (f.hidden ? '<p class="muted">Приховано ' + f.hidden + ' ' + plural(f.hidden, 'документ', 'документи', 'документів') + ', які не стосуються вашої ситуації.</p>' : '') + '</section>';
+      (f.hidden ? '<p class="muted">Ще ' + f.hidden + ' ' + plural(f.hidden, 'документ', 'документи', 'документів') + ' у вашій ситуації не ' + plural(f.hidden, 'потрібен', 'потрібні', 'потрібні') + ', тому ми ' + plural(f.hidden, 'його', 'їх', 'їх') + ' сховали.</p>' : '') + '</section>';
   }
 
   function stepsHtml() {
@@ -155,36 +155,38 @@
       var url = (c && c.url) || (J.type === 'ed-page' && J.ed.sources && J.ed.sources[0] ? J.ed.sources[0][1] : '');
       st = ed.map(function (s, i) { return [s, '', i === 0 && url ? url : '']; });
     } else st = (J.steps[c.id] || []).slice();
-    if (v && v.cost && v.cost !== 'Безоплатно' && !(ed && (!c || c.id === 'online'))) st.push(['Сплатіть послугу', 'Вартість: ' + v.cost + '.', '']);
-    if (v && v.time) st.push(['Дочекайтеся рішення', 'Строк: ' + v.time + '.', '']);
+    if (v && v.cost && v.cost !== 'Безоплатно' && !(ed && (!c || c.id === 'online'))) st.push(['Оплатіть послугу', 'Ціна: ' + v.cost + '.', '']);
+    if (v && v.time) st.push(['Дочекайтеся рішення', 'Це займе: ' + v.time + '.', '']);
     var extra = '';
     if (c && c.id === 'office') {
-      var q = (J.providers[0] || 'ЦНАП') + (S.city ? ' ' + S.city : '');
-      extra = '<div class="j-city"><label for="j-city">Ваше місто (для пошуку на карті)</label><div class="j-city-row"><input id="j-city" type="text" value="' + esc(S.city) + '" placeholder="Наприклад, Київ" autocomplete="address-level2">' +
+      var q = (J.providers[0] || 'ЦНАП').replace(/\s*\([^)]*\)/g, '').replace(/^Місцевий підрозділ /, '').replace(/ вашої | у вашій області або в Києві/g, ' ').replace(/\s+/g, ' ').trim() + (S.city ? ' ' + S.city : '');
+      extra = '<div class="j-city"><label for="j-city">Ваше місто чи село — щоб знайти установу на карті</label><div class="j-city-row"><input id="j-city" type="text" value="' + esc(S.city) + '" placeholder="Наприклад, Київ" autocomplete="address-level2">' +
         '<a class="btn ghost sm-btn" target="_blank" rel="noopener noreferrer" href="https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(q) + '">Знайти на карті</a>' +
-        (J.cnap ? '<a class="btn ghost sm-btn" target="_blank" rel="noopener noreferrer" href="https://guide.diia.gov.ua/asc/">Реєстр ЦНАП</a>' : '') + '</div></div>';
+        (J.cnap ? '<a class="btn ghost sm-btn" target="_blank" rel="noopener noreferrer" href="https://guide.diia.gov.ua/asc/">Список усіх ЦНАП</a>' : '') + '</div></div>';
     }
-    var title = ed && (!c || c.id === 'online') ? 'Що зробити на офіційному сайті' : 'Подайте заяву: ' + c.label.toLowerCase();
+    var title = ed && (!c || c.id === 'online') ? 'Що зробити на офіційному сайті' : 'Ваші кроки: ' + c.label.toLowerCase();
     return '<section class="j-sec"><h3>' + esc(title) + '</h3><ol class="osteps">' + st.map(function (s, i) {
       return '<li class="ostep"><span class="num">' + (i + 1) + '</span><div class="body"><b>' + esc(s[0]) + '</b>' + (s[1] ? '<span>' + esc(s[1]) + '</span>' : '') +
-        (s[2] ? '<div class="oact"><a class="btn ' + (i === 0 ? 'primary' : 'ghost') + ' sm-btn" href="' + esc(s[2]) + '" target="_blank" rel="noopener noreferrer">Відкрити ' + esc(host(s[2])) + '</a></div>' : '') + '</div></li>';
+        (s[2] ? '<div class="oact"><a class="btn ' + (i === 0 ? 'primary' : 'ghost') + ' sm-btn" href="' + esc(s[2]) + '" target="_blank" rel="noopener noreferrer">Відкрити сайт ' + esc(host(s[2])) + '</a></div>' : '') + '</div></li>';
     }).join('') + '</ol>' + extra + '</section>';
   }
 
   function resultHtml() {
     var v = variant(), bits = [];
     if (J.products.length) bits.push('<li><b>Що ви отримаєте:</b> ' + esc(J.products.join('; ')) + '.</li>');
-    if (v && v.time) bits.push('<li><b>Строк:</b> ' + esc(v.time) + '.</li>');
-    if (J.receive.length) bits.push('<li><b>Як отримати:</b> ' + esc(J.receive.join(', ')) + '.</li>');
+    if (v && v.time) bits.push('<li><b>Скільки часу:</b> ' + esc(v.time) + '.</li>');
+    if (J.receive.length) bits.push('<li><b>Як отримати результат:</b> ' + esc(J.receive.join(', ')) + '.</li>');
     var after = J.ed && J.ed.after ? '<p class="j-sub">Після подачі</p><ul class="j-rec">' + J.ed.after.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>' : '';
     var ref = '';
     if ((J.refusal || []).length || (J.appeal || []).length || J.court) {
-      ref = '<details class="j-more"><summary>Якщо відмовили</summary>' + (J.refusal.length ? '<ul>' + J.refusal.slice(0, 6).map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>' : '') +
+      var noRef = J.refusal.length && J.refusal.every(function (x) { return /^\s*(законом не встановлен\S*|не встановлен\S* законодавством|не передбачен\S*|відсутні)\.?\s*$/i.test(x); });
+      ref = '<details class="j-more"><summary>Якщо відмовили</summary>' + (noRef ? '<p>Закон не встановлює окремих причин для відмови в цій послузі.</p>' : J.refusal.length ? '<p>Чому можуть відмовити (за даними реєстру):</p><ul>' + J.refusal.slice(0, 6).map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>' : '') +
         (J.appeal.length ? '<p>Оскаржити рішення можна: ' + esc(J.appeal.join('; ')) + '.</p>' : '') + (J.court ? '<p>Рішення можна оскаржити в суді.</p>' : '') + '</details>';
     }
-    var nx = J.next && J.next.length ? '<p class="j-sub">Що далі</p><ul class="j-rec">' + J.next.slice(0, 4).map(function (n) { return '<li><a href="' + esc(n.u) + '">' + esc(n.t) + '</a></li>'; }).join('') + '</ul>' : '';
+    var help = (J.help || []).length ? '<details class="j-more"><summary>Якщо ваша ситуація інша</summary><ul>' + J.help.map(function (h) { return '<li><b>' + esc(h[0]) + '</b> ' + esc(h[1]) + '</li>'; }).join('') + '</ul></details>' : '';
+    var nx = '';   /* пов’язані послуги показує статичний блок «Що може знадобитися далі» одразу під планом */
     var src = J.ed ? '<p class="muted j-src">Інструкцію перевірено ' + esc(J.ed.verified.split('-').reverse().join('.')) + ': ' + J.ed.sources.map(function (s) { return '<a href="' + esc(s[1]) + '" target="_blank" rel="noopener noreferrer">' + esc(s[0]) + '</a>'; }).join('; ') + '.</p>' : '';
-    return bits.length || ref || after || nx ? '<section class="j-sec"><h3>Результат і що далі</h3>' + (bits.length ? '<ul class="j-rec">' + bits.join('') + '</ul>' : '') + after + ref + nx + src + '</section>' : '';
+    return bits.length || ref || after || nx || help ? '<section class="j-sec"><h3>Результат і що далі</h3>' + (bits.length ? '<ul class="j-rec">' + bits.join('') + '</ul>' : '') + after + help + ref + nx + src + '</section>' : '';
   }
 
   function summaryText() {
@@ -204,15 +206,15 @@
     var p = progress(), pend = pending();
     var saved = (store.get('yak_saved', []) || []).indexOf(SAVE_ID) > -1;
     var nq = J.questions.length;
-    var head = '<div class="j-head"><div><b>Ваш покроковий план</b><span class="muted">' + (nq ? 'Дайте відповідь на ' + nq + ' ' + plural(nq, 'питання', 'питання', 'питань') + ' — і план підлаштується під вас.' : 'Відмічайте готові документи — прогрес збережеться в цьому браузері.') + '</span></div>' +
+    var head = '<div class="j-head"><div><b>Ваш покроковий план</b><span class="muted">' + (nq ? 'Дайте відповідь на ' + nq + ' ' + plural(nq, 'питання', 'питання', 'питань') + ' — і ми покажемо, що робити саме вам.' : 'Відмічайте документи, які вже готові. Позначки збережуться на цьому пристрої.') + '</span></div>' +
       '<div class="j-bar" role="progressbar" aria-valuenow="' + p.pct + '" aria-valuemin="0" aria-valuemax="100" aria-label="Готовність"><i style="width:' + p.pct + '%"></i></div><span class="j-pct">' + p.pct + '%</span></div>';
     var html = head + fitHtml() + J.questions.map(qHtml).join('');
     if (!pend.length && eligible()) html += recHtml() + (stopped() ? '' : docsHtml() + stepsHtml() + resultHtml());
-    else if (pend.length) html += '<p class="muted j-wait">Після відповіді' + (pend.length > 1 ? ' на всі питання' : '') + ' покажемо ваш план: документи, кроки й результат.</p>';
+    else if (pend.length) html += '<p class="muted j-wait">Коли ви відповісте' + (pend.length > 1 ? ' на всі питання' : '') + ', тут з’явиться ваш план: документи, кроки й результат.</p>';
     html += '<div class="j-actions"><button type="button" class="btn ghost" data-act="save">' + (saved ? 'Збережено ✓' : 'Зберегти план') + '</button>' +
       (!pend.length ? '<button type="button" class="btn ghost" data-act="copy">Копіювати план</button><button type="button" class="btn ghost" data-act="print">Друкувати</button>' : '') +
       (Object.keys(S.ans).length || Object.keys(S.docs).length ? '<button type="button" class="btn ghost" data-act="reset">Почати спочатку</button>' : '') +
-      (document.getElementById('j-ref') ? '<button type="button" class="btn ghost" data-act="ref">Повна довідка</button>' : '') + '</div>';
+      (document.getElementById('j-ref') ? '<button type="button" class="btn ghost" data-act="ref">Уся інформація про послугу</button>' : '') + '</div>';
     root.innerHTML = html;
   }
 
@@ -234,7 +236,7 @@
     var a = b.dataset.act;
     if (a === 'save') {
       var s = store.get('yak_saved', []) || [], id = SAVE_ID, k = s.indexOf(id);
-      if (k > -1) { s.splice(k, 1); toast('План видалено зі збереженого'); } else { s.push(id); toast('План збережено. Він у розділі «Збережене»'); }
+      if (k > -1) { s.splice(k, 1); toast('План видалено зі збереженого'); } else { s.push(id); toast('План збережено. Знайдете його в розділі «Збережене»'); }
       store.set('yak_saved', s); save(); render();
     } else if (a === 'copy') {
       var txt = summaryText();

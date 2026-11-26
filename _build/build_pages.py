@@ -55,7 +55,7 @@ def ins_blog_block(iid, r):
 
 URLS = [SITE, SITE + 'blog/']
 URLS += [f'{SITE}blog/{a["slug"]}/' for a in ARTICLES]
-FOOT = '<p class="callout">Матеріал має інформаційний характер і не є юридичною консультацією. Актуальні умови перевіряйте в офіційних джерелах.</p>'
+FOOT = '<p class="callout">Ми пояснюємо простими словами, але це не юридична консультація. Перед зверненням перевірте умови на офіційному сайті.</p>'
 
 # ---------- Послуги ----------
 svc_url = {}; svc_event = {}
@@ -161,12 +161,13 @@ def service_page(sid):
         if len(acc) > 340: acc = cut(acc, 300)
         rest = d[len(acc):].strip() if d.startswith(acc) else ''
         lead_html = f'<p class="post-lead">{e(acc)}</p>' + (f'<details class="more"><summary>Детальніше про послугу</summary><p>{e(rest)}</p></details>' if rest else '')
+        if j.get('ed'):   # є перевірене пояснення простими словами — офіційний опис реєстру згортаємо під нього
+            lead_html = f'<details class="more"><summary>Офіційний опис послуги з реєстру</summary><p>{e(d)}</p></details>'
     body = f'''<article class="container post svc2">
 {crumbs([('Головна', ''), ('Життєві події', 'e/'), (ev['title'], f'e/{ev["id"]}/'), (n, '')], '../../')}
 <p class="post-cat">{e(ev["title"])}</p>
 <h1>{e(n)}</h1>
-{lead_html}
-{journey.render_static(j)}
+{journey.render_static(j, lead_html)}
 {FOOT}
 <p class="source">Джерело даних: <a href="https://guide.diia.gov.ua/" target="_blank" rel="noopener noreferrer">Гід з державних послуг</a> (відкритий реєстр, ліцензія CC BY 4.0), текст скорочено. Сторінку сформовано {human(DATE)}.</p>
 </article>
@@ -269,7 +270,6 @@ def ins_page(i):
 <h1>{e(ins["title"])}</h1>
 <p class="post-meta">Орієнтовний час: {e(ins["time"])} · Оновлено: {human(DATE)}</p>
 <p class="post-lead">{e(ins["summary"])}</p>
-{('<aside class="short"><b>Чому саме так</b><p>' + e(ins['why']) + '</p></aside>') if ins.get('why') else ''}
 {'' if i == 'fop-group' or i in journey.INS_ED else cta('../../#/i/' + i, 'Персональна інструкція', 'Вкажіть місто та відповідь на кілька запитань, і ми підставимо кроки під вашу ситуацію.', 'Отримати персональну інструкцію')}
 {''.join(parts)}
 {FOOT}
