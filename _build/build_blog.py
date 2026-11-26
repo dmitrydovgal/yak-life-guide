@@ -172,7 +172,15 @@ chips.forEach(function(b){b.addEventListener('click',function(){cat=b.getAttribu
 
 def write(path, text):
     p = os.path.join(ROOT, path); os.makedirs(os.path.dirname(p), exist_ok=True)
-    open(p, 'w', encoding='utf-8', newline='\n').write(text)
+    import time
+    for attempt in range(6):   # на Windows файл може бути коротко зайнятий (сервер перегляду, антивірус)
+        try:
+            with open(p, 'w', encoding='utf-8', newline='\n') as fh:
+                fh.write(text)
+            return
+        except OSError:
+            if attempt == 5: raise
+            time.sleep(0.3 * (attempt + 1))
 
 _LM = {f'{SITE}blog/{a["slug"]}/': a['modified'] for a in ARTICLES}
 def _lm(u):

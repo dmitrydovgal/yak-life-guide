@@ -385,3 +385,99 @@ a.kp:hover i{background:#d2e3fc}
 .post .crumbs li:last-child,.blog-head .crumbs li:last-child{flex:1 1 0;min-width:0}
 .crumbs li:last-child span{display:block;max-width:100%}
 @media (max-width:560px){.post .crumbs li:not(:last-child):not(:first-child){display:none}}
+/* Сторінка послуги v2: компактні факти, головна дія, план кроків */
+.facts{display:grid;grid-template-columns:max-content 1fr;gap:12px 28px;margin:24px 0 0;padding:20px 0;border-top:1px solid #EEF0F2;border-bottom:1px solid #EEF0F2}
+.facts dt{color:var(--tx2);font-size:14px;padding-top:2px}
+.facts dd{margin:0;font-size:16px;line-height:1.55}
+.facts .flat{list-style:none;padding:0!important;margin:0}
+.facts .flat li{font-size:15px;margin:0 0 4px}
+.svc-main{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;margin:20px 0 8px}
+.svc-main p{margin:0;color:var(--tx2);font-size:15px;flex:1 1 280px}
+.svc-main .muted{font-size:13px}
+.svc2 .osteps{padding:0!important;margin:8px 0 0}
+.svc2 .ostep{margin:0}
+.svc2 .ostep .body{min-width:0}
+.svc2 .ostep .body b{display:block;margin-bottom:2px}
+.svc2 .ostep .body p{font-size:15px;margin:6px 0 0}
+.svc2 .docs{padding:0!important}
+.svc2 .docs li{font-size:14px;line-height:1.5;margin:0}
+.svc-alt{margin-top:28px;color:var(--tx2);font-size:15px}
+@media (max-width:560px){.facts{grid-template-columns:1fr;gap:2px}.facts dd{margin-bottom:10px}.svc-main .btn{width:100%}}
+.facts .flat li{display:flex;flex-direction:column;gap:1px;margin:0 0 10px}
+.facts .flat li:last-child{margin-bottom:0}
+.facts .vl{color:var(--tx2);font-size:14px;line-height:1.45}
+.facts .vv{font-size:16px}
+/* Рушій сценаріїв послуг (journey.js) */
+.j-root{margin:24px 0 8px}
+.j-on .j-root{border:1px solid var(--bd);border-radius:var(--r);padding:20px}
+.j-head{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:18px}
+.j-head>div{flex:1 1 260px;display:flex;flex-direction:column;gap:2px}
+.j-head b{font-size:18px}
+.j-head .muted{font-size:14px}
+.j-bar{flex:0 0 120px;height:8px;background:var(--lt);border-radius:99px;overflow:hidden}
+.j-bar i{display:block;height:100%;background:var(--bl);border-radius:99px;transition:width .2s}
+.j-pct{font-size:14px;color:var(--tx2);min-width:36px}
+.j-q legend{font-size:17px}
+.j-why{font-size:14px;margin:-4px 0 10px}
+.j-tip{font-size:14px;background:var(--lt);border-radius:10px;padding:10px 12px;margin:0 0 10px}
+.j-tag{font-size:12px;padding:2px 8px;margin-left:8px;cursor:default;background:var(--blh);border-color:#d2e3fc;color:var(--bl);vertical-align:middle}
+.j-sec{border-top:1px solid #EEF0F2;padding-top:16px;margin-top:18px}
+.j-sec h3{font-size:17px;margin:0 0 10px;display:flex;gap:10px;align-items:baseline}
+.j-sec h3 .muted{font-size:14px;font-weight:400}
+.j-rec{list-style:none;padding:0!important;margin:0 0 8px}
+.j-rec li{font-size:15px;margin:0 0 6px}
+.j-docs{list-style:none;padding:0!important;margin:0;display:grid;gap:6px}
+.j-docs li{display:flex;gap:10px;align-items:flex-start;justify-content:space-between;background:var(--lt);border-radius:8px;padding:10px 12px;margin:0;font-size:14px;line-height:1.5}
+.j-docs label{display:flex;gap:10px;align-items:flex-start;cursor:pointer;flex:1}
+.j-docs input{accent-color:var(--bl);width:18px;height:18px;margin-top:2px;flex:none}
+.j-docs small{display:block;color:var(--tx2);font-size:13px;margin-top:2px}
+.j-docs li.na{opacity:.55}
+.j-docs li.na label span{text-decoration:line-through}
+.j-na{font:inherit;font-size:13px;background:none;border:0;color:var(--bl);cursor:pointer;padding:2px 0;white-space:nowrap}
+.j-city{margin-top:12px}
+.j-city label{font-size:14px;color:var(--tx2)}
+.j-city-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.j-city-row input{font:inherit;font-size:15px;height:36px;padding:0 12px;border:1px solid var(--bd);border-radius:10px;flex:1 1 160px;min-width:0}
+.j-more{margin-top:8px;font-size:15px}
+.j-more summary{cursor:pointer;color:var(--bl)}
+.j-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}
+.j-actions .btn{height:40px;font-size:14px}
+.j-wait{font-size:14px}
+.j-on .j-ref{display:none}
+.j-show-ref .j-ref{display:block}
+.cmp{width:100%;border-collapse:collapse;font-size:15px;margin:8px 0 16px}
+.cmp th,.cmp td{text-align:left;padding:10px 8px;border-bottom:1px solid #EEF0F2;vertical-align:top}
+.cmp th{color:var(--tx2);font-weight:500;font-size:14px}
+.verify li{font-size:15px}
+.more{margin:0 0 8px;font-size:15px}
+.more summary{cursor:pointer;color:var(--bl)}
+.docs small.cond{display:block;color:var(--tx2);font-size:13px}
+@media (max-width:560px){.j-on .j-root{padding:16px 14px;margin-left:-4px;margin-right:-4px}.j-bar{flex-basis:100%}.cmp{font-size:14px}.j-actions .btn{flex:1 1 auto}}
+@media print{.header,.footer,.j-actions,.j-na,.j-city{display:none!important}.j-on .j-root{border:0;padding:0}}
+.post .j-root p{font-size:15px;line-height:1.55}
+.post .j-root .j-why{font-size:14px}
+.post .j-root li{font-size:15px}
+.post .j-root .j-docs li{font-size:14px}
+.post .j-root .opt small{font-size:14px}
+.j-ans{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;padding:10px 0;border-bottom:1px solid #EEF0F2}
+.j-ans .muted{font-size:14px;flex:1 1 100%}
+.j-ans b{font-size:15px;font-weight:500}
+.j-edit{font:inherit;font-size:14px;background:none;border:0;color:var(--bl);cursor:pointer;padding:0;margin-left:auto}
+.cmp-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:8px 0 16px}
+.cmp-wrap .cmp{margin:0;min-width:520px}
+.cmp tr.best td{background:var(--blh)}
+.cmp-g th[scope=row]{color:var(--tx2);font-weight:500;width:22%}
+.cmp-g td{font-size:14px}
+.j-root .opt small.j-pro{color:#137333}
+.j-root .opt small.j-con{color:#8a5a00}
+.j-warn{border:1px solid #f6c26b;background:#fffbf0;border-radius:10px;padding:14px 16px!important;margin-top:12px}
+.j-warn h3{color:#8a5a00}
+.j-block{background:var(--lt);border-radius:10px;padding:12px 14px;margin:10px 0}
+.j-block b{display:block;margin-bottom:4px;font-size:15px}
+.j-block ul{margin:0;padding-left:18px!important}
+.j-block .btn{margin-top:8px}
+.j-sub{font-weight:600;margin:14px 0 6px!important;font-size:15px}
+.j-src{font-size:13px!important;margin-top:12px}
+.j-fit{margin:0 0 14px}
+.j-block.j-bwarn{background:#fffbf0;border-left:3px solid #f6c26b}
+.j-block.j-brec{background:var(--blh)}

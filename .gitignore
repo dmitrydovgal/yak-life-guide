@@ -3,3 +3,8 @@ _build/registry.json
 *.png
 _build/__pycache__/
 !og-image.png
+_build/audit_services.json
+_build/priority.json
+_build/qa_report.json
+_build/qa_report.md
+_build/user_tests.md

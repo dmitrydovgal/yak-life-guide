@@ -43,6 +43,7 @@ def cta(href, title, text, btn):
 
 # ---------- Зв'язок інструкцій і розділів зі статтями блогу ----------
 from build_blog import CAT_HUB
+import svc_v2
 def blog_block(cid, r):
     arts = [a for a in ARTICLES if CAT_HUB.get(a['cat'], ('',))[0] == cid]
     if not arts: return ''
@@ -81,6 +82,18 @@ def lst(v):
             except Exception: pass
         return [x.strip() for x in re.split(r'\s*\|\s*', v) if x.strip()]
     return [str(x) for x in (v or [])]
+
+
+# ---------- Сценарії послуг ----------
+import journey
+JOURNEYS = {}
+_sector_of = {}
+for _ev in EVENTS:
+    for _sec, _ids in SECTORS[_ev['id']]:
+        for _sid in _ids:
+            _sector_of.setdefault(_sid, _ids)
+def related_of(sid):
+    return [(svc_title[x], '../../' + svc_url[x]) for x in _sector_of.get(sid, []) if x != sid and x in svc_url]
 
 def _svc_desc(sid):
     z = REG[sid]; n = svc_title[sid]
@@ -135,6 +148,29 @@ def service_page(sid):
 {FOOT}
 <p class="source">Джерело даних: <a href="https://guide.diia.gov.ua/" target="_blank" rel="noopener noreferrer">Гід з державних послуг</a> (відкритий реєстр, ліцензія CC BY 4.0), текст скорочено. Сторінку сформовано {human(DATE)}.</p>
 </article>'''
+    j = journey.build(sid, z, related_of(sid), svc_url)
+    JOURNEYS[sid] = j
+    d = re.sub(r'\s+', ' ', str(z.get('short_description_plain') or '')).strip()
+    lead_html = ''
+    if d and d.lower() not in (full.lower(), n.lower()):
+        sents = re.split(r'(?<=[.!?])\s+(?=[А-ЯЇІЄҐA-Z0-9«"])', d)
+        acc = ''
+        for s_ in sents:
+            if acc and len(acc) + len(s_) > 300: break
+            acc = (acc + ' ' + s_).strip()
+        if len(acc) > 340: acc = cut(acc, 300)
+        rest = d[len(acc):].strip() if d.startswith(acc) else ''
+        lead_html = f'<p class="post-lead">{e(acc)}</p>' + (f'<details class="more"><summary>Детальніше про послугу</summary><p>{e(rest)}</p></details>' if rest else '')
+    body = f'''<article class="container post svc2">
+{crumbs([('Головна', ''), ('Життєві події', 'e/'), (ev['title'], f'e/{ev["id"]}/'), (n, '')], '../../')}
+<p class="post-cat">{e(ev["title"])}</p>
+<h1>{e(n)}</h1>
+{lead_html}
+{journey.render_static(j)}
+{FOOT}
+<p class="source">Джерело даних: <a href="https://guide.diia.gov.ua/" target="_blank" rel="noopener noreferrer">Гід з державних послуг</a> (відкритий реєстр, ліцензія CC BY 4.0), текст скорочено. Сторінку сформовано {human(DATE)}.</p>
+</article>
+<script src="../../journey.js" defer></script>'''
     ld = [bc_ld([('Головна', SITE), ('Життєві події', SITE + 'e/'), (ev['title'], f'{SITE}e/{ev["id"]}/'), (n, url)]),
           {'@context': 'https://schema.org', '@type': 'GovernmentService', 'name': n, 'description': cut(desc_full, 300), 'serviceType': ev['title'],
            'areaServed': {'@type': 'Country', 'name': 'Україна'}, 'inLanguage': 'uk', 'url': url,
@@ -147,6 +183,8 @@ def service_page(sid):
 
 for sid in svc_url:
     write(svc_url[sid] + 'index.html', service_page(sid)); URLS.append(SITE + svc_url[sid])
+write('s/map.json', json.dumps({k: v for k, v in svc_url.items()}, ensure_ascii=False))
+print('journeys:', len(JOURNEYS), '| with questions:', sum(1 for j in JOURNEYS.values() if j['questions']), '| need editorial review:', sum(1 for j in JOURNEYS.values() if j['review']))
 
 # ---------- Події ----------
 def event_page(ev):
@@ -199,6 +237,19 @@ def ins_page(i):
         parts.append('<h2>Приват24: покрокова інструкція</h2>' + steps_ol([split(x) for x in sv['privat24']['steps']]))
         parts.append('<h2>Часті запитання</h2>' + ''.join(f'<details><summary>{e(q)}</summary><p>{e(a)}</p></details>' for q, a in X['KOM_FAQ']))
         parts.append('<p>Докладніше: <a href="../../blog/yak-oplatyty-komunalku-online/">Як оплатити комуналку онлайн в Україні у 2026 році</a>.</p>')
+    elif i in journey.INS_ED:
+        ed = journey.INS_ED[i]
+        jd = {'type': 'ed-page', 'id': i, 'name': ins['title'], 'ed': ed, 'questions': []}
+        data = json.dumps(jd, ensure_ascii=False).replace('</', '<\\/')
+        parts.append(f'<aside class="short"><b>Простими словами</b><p>{e(ed["intro"])}</p></aside><div class="j-root" id="journey" data-sid="{i}"></div>'
+                     f'<div class="j-ref" id="j-ref">{journey.render_ed_static(ed)}</div>'
+                     f'<script type="application/json" id="journey-data">{data}</script><script src="../../journey.js" defer></script>')
+        parts.append('<h2>Часті запитання</h2>' + ''.join(f'<details><summary>{e(q[0])}</summary><p>{e(q[1])}</p></details>' for q in ins['faq']))
+        parts.append('<h2>Офіційні посилання</h2><ul>' + ''.join(f'<li><a href="{l[1]}" target="_blank" rel="noopener noreferrer">{e(l[0])}</a></li>' for l in ins['links']) + '</ul>')
+    elif i == 'fop-group':
+        import custom_fop
+        parts.append(custom_fop.render_static())
+        parts.append('<h2>Часті запитання</h2>' + ''.join(f'<details><summary>{e(q[0])}</summary><p>{e(q[1])}</p></details>' for q in ins['faq']))
     else:
         if ins['needs']: parts.append('<h2>Що знадобиться</h2><ul>' + ''.join(f'<li>{e(n)}</li>' for n in ins['needs']) + '</ul>')
         parts.append('<h2>Покрокова інструкція</h2>' + steps_ol(ins['steps']))
@@ -219,7 +270,7 @@ def ins_page(i):
 <p class="post-meta">Орієнтовний час: {e(ins["time"])} · Оновлено: {human(DATE)}</p>
 <p class="post-lead">{e(ins["summary"])}</p>
 {('<aside class="short"><b>Чому саме так</b><p>' + e(ins['why']) + '</p></aside>') if ins.get('why') else ''}
-{cta('../../#/i/' + i, 'Персональна інструкція', 'Вкажіть місто та відповідь на кілька запитань, і ми підставимо кроки під вашу ситуацію.', 'Отримати персональну інструкцію')}
+{'' if i == 'fop-group' or i in journey.INS_ED else cta('../../#/i/' + i, 'Персональна інструкція', 'Вкажіть місто та відповідь на кілька запитань, і ми підставимо кроки під вашу ситуацію.', 'Отримати персональну інструкцію')}
 {''.join(parts)}
 {FOOT}
 <h2>Читайте також</h2><ul class="related">{''.join(f'<li><a href="../{k}/">{e(INS[k]["title"])}</a></li>' for k in others)}</ul>

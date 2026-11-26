@@ -56,7 +56,13 @@
   /* ---------- Пошук ---------- */
   const STOP = ['як', 'що', 'де', 'чи', 'для', 'і', 'в', 'на', 'по', 'з', 'до', 'у', 'перед', 'після', 'мені'];
   const norm = s => String(s).toLowerCase().replace(/[ʼ'’`]/g, '').replace(/ё/g, 'е').replace(/ы/g, 'и').replace(/э/g, 'е').replace(/ъ/g, '').replace(/[?!.,«»"]/g, ' ');
-  const stem = w => (w.length > 5 ? w.slice(0, w.length - 2) : w);
+  const stem = w => (w.length > 5 ? w.slice(0, w.length - 2) : (w.length >= 4 ? w.replace(/[аяоеєіиуюїйь]+$/, '') : w));
+  /* Розмовні слова → терміни реєстру (людина пише «загубив», у реєстрі — «втрата») */
+  const SYN = { 'загубив': ['втрат'], 'загубила': ['втрат'], 'загубили': ['втрат'], 'загубився': ['втрат'], 'втратив': ['втрат'], 'втратила': ['втрат'], 'втратили': ['втрат'],
+    'вкрали': ['викрад'], 'id': ['паспорт'], 'id-картку': ['паспорт'], 'id-картка': ['паспорт'], 'айді': ['паспорт'], 'айдішку': ['паспорт'],
+    'переселенець': ['переміщен'], 'переселенка': ['переміщен'], 'переселенці': ['переміщен'], 'переселенців': ['переміщен'], 'впо': ['переміщен', 'впо'],
+    'зруйноване': ['знищен', 'зруйн'], 'зруйнований': ['знищен', 'зруйн'], 'розбомбили': ['знищен', 'пошкодж'] };
+  const alts = t => SYN[t] || [t];
   const wm = (t, w) => { const a = stem(t), b = stem(w); return a.length >= 2 && b.length >= 2 && (b.startsWith(a) || a.startsWith(b)); };
   function search(q, cat) {
     let toks = norm(q).split(/\s+/).filter(Boolean);
@@ -113,13 +119,13 @@
     const out = [];
     for (const [id, tw, fw] of svcIdx) {
       let sc = 0;
-      for (const t of toks) { if (tw.some(w => wm(t, w))) sc += 3; else if (fw.some(w => wm(t, w))) sc += 1; else { sc = -1; break; } }
+      for (const t of toks) { const al = alts(t); if (al.some(a => tw.some(w => wm(a, w)))) sc += 3; else if (al.some(a => fw.some(w => wm(a, w)))) sc += 1; else { sc = -1; break; } }
       if (sc > 0) out.push([sc, id]);
     }
     return out.sort((a, b) => b[0] - a[0]).map(x => x[1]);
   }
   const empty = (title, text, cta) => `<div class="empty">${ic('search-x')}<h3>${esc(title)}</h3><p>${esc(text)}</p>${cta || ''}</div>`;
-  const demoNote = `<div class="note">${ic('info')}<p><b>Демонстраційний матеріал.</b> Інформація орієнтовна й не є юридичною консультацією. Актуальні умови уточнюйте на офіційних сайтах.</p></div>`;
+  const demoNote = `<div class="note">${ic('info')}<p><b>Важливо.</b> Інформація має довідковий характер і не є юридичною консультацією. Актуальні умови уточнюйте на офіційних сайтах.</p></div>`;
   const faqHtml = faq => `<div class="acc">${faq.map(([q, a], i) => `<div class="acc-item"><button class="acc-btn" type="button" aria-expanded="false" data-acc>${esc(q)}${ic('chevron-down')}</button><div class="acc-panel" hidden><p>${esc(a)}</p></div></div>`).join('')}</div>`;
   const extLink = (label, url, cls = 'btn ghost') => `<a class="${cls}" href="${url}" target="_blank" rel="noopener noreferrer">${esc(label)}${ic('external-link')}</a>`;
   const searchField = (id, ph, val = '') => `<form class="searchbox" id="${id}" role="search" autocomplete="off">
@@ -485,9 +491,16 @@
     }
 
 
+  let svcMap = null;
   async function pageService(sid, eid, step) {
     const tok = routeTok;
     app.innerHTML = loadingHtml; lucide.createIcons();
+    /* Покроковий сценарій послуги живе на її статичній сторінці (journey.js) */
+    try {
+      if (!svcMap) svcMap = await fetch('s/map.json').then(r => r.ok ? r.json() : {});
+      if (tok !== routeTok) return;
+      if (svcMap[sid]) { location.replace(new URL(svcMap[sid], location.href.split('#')[0]).href); return; }
+    } catch (e) { /* немає мапи — показуємо старий сценарій нижче */ }
     try { await loadGuide(); } catch (e) { if (tok === routeTok) loadErr(); return; }
     if (tok !== routeTok) return;
     const s = GUIDE_SERVICES[sid]; if (!s) return page404();
@@ -597,6 +610,7 @@
 
   function pageInstruction(id, a2) {
     const base0 = INS[id]; if (!base0) return page404();
+    if (id === 'fop-group' || id === 'fop-open') { location.replace(new URL('i/' + id + '/', location.href.split('#')[0]).href); return; } /* глибокий сценарій зі статичної сторінки */
     if (base0.flow === 'komunalka') return pageKom(1);
     const cat = catById(base0.cat), plan = insPlan(base0);
     if (base0.wizard && base0.wizard.options.some(o => o.id === a2)) { setISel(id, { opt: a2 }); location.replace(`#/i/${id}/result`); return; }
@@ -776,7 +790,7 @@
         <div class="svc-actions"><a class="btn ${s === order[0] ? 'primary' : 'ghost'}" href="#/k/4/${s.id}">Як це працює?</a>${extLink('Перейти до сервісу', s.url, 'btn ghost')}</div>
       </section>`).join('')}</div>
       <section class="local"><h2 class="h2">Місцеві постачальники</h2>
-        ${local ? `<p class="muted">Демонстраційний перелік для міста ${esc(st.city)}. Це не перевірка вашого будинку. Назву компанії перевіряйте у квитанції.</p>
+        ${local ? `<p class="muted">Приклад постачальників для міста ${esc(st.city)} — це не перевірка вашого будинку. Назву компанії перевіряйте у квитанції.</p>
         <ul class="rows plainrows">${local.map(p => `<li class="prov">${ic('building-2')}<span><b>${esc(p[1])}</b><small>${esc(p[0])}</small></span></li>`).join('')}</ul>`
           : empty('Місцевих постачальників не знайдено', `Для міста ${st.city} у нас поки немає даних. Скористайтеся сервісами вище або знайдіть постачальника за квитанцією.`, `<a class="btn ghost" href="#/i/provider-find">Як знайти свого постачальника?</a>`)}
       </section>
