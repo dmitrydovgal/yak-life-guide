@@ -481,3 +481,13 @@ a.kp:hover i{background:#d2e3fc}
 .j-fit{margin:0 0 14px}
 .j-block.j-bwarn{background:#fffbf0;border-left:3px solid #f6c26b}
 .j-block.j-brec{background:var(--blh)}
+/* Бланки заяв (journey.formsHtml / journey.py _forms_static) */
+.j-forms .form-item{display:grid;gap:6px;justify-items:start;background:var(--lt);border-radius:8px;padding:12px;margin:8px 0;font-size:14px;line-height:1.5}
+.j-forms .form-item small{color:var(--tx2);font-size:13px}
+.j-forms .form-item small a{color:inherit}
+.j-forms .form-who{margin:12px 0 0;font-size:14px;font-weight:600}
+.j-forms .form-tag{font-size:12px;line-height:1.4;padding:2px 8px;border-radius:999px;background:#e3f4e8;color:#1d6b35}
+.j-forms .form-tag.warn{background:#fff4d6;color:#7a5a00}
+.j-forms .form-tips{background:var(--lt);border-left:3px solid var(--bd);border-radius:8px;padding:10px 12px;margin:8px 0;font-size:14px;line-height:1.5}
+.j-forms .form-tips ul{margin:6px 0 0;padding-left:18px}
+@media (max-width:600px){.j-forms .form-item .btn{width:100%;justify-content:center}}

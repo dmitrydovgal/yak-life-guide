@@ -14,6 +14,9 @@
 import re, html, json
 from urllib.parse import urlparse
 import svc_v2 as V
+import forms as FM
+
+FM.check()
 
 e = html.escape
 DATA_DATE = '2026-11-24'          # дата завантаження відкритого реєстру (registry.json)
@@ -489,6 +492,8 @@ def build(sid, z, related, url_of):
     j['verify'] = list(dict.fromkeys(j['verify']))
     j['steps'] = {c['id']: [list(s) for s in _steps_for(j, c['id'])] for c in j['channels']}
     j['help'] = _help(j, local)
+    fm = FM.for_service(sid)
+    if fm: j['forms'] = fm
     return j
 
 
@@ -594,6 +599,47 @@ def _vfull(x):
     return ('<br><small class="muted">' + e(x['full']) + '</small>') if x.get('full') else ''
 
 
+_PAPER_HOW = {'office': 'особисто в установі', 'mail': 'поштою', 'email': 'електронною поштою'}
+_a = lambda u, t: f'<a href="{e(u)}" target="_blank" rel="noopener noreferrer">{t}</a>'
+
+
+def _form_card(x, kind):
+    """Картка одного матеріалу; та сама розмітка, що й formCard() у journey.js."""
+    tag = 'Офіційний бланк' if kind == 'blank' else ('Неофіційний приклад — перевірте актуальність' if x.get('official') is False else 'Офіційний приклад заповнення')
+    btn = 'Відкрити акт із бланком' if x.get('act') else ('Завантажити порожній бланк' if kind == 'blank' else 'Переглянути приклад заповнення')
+    meta = (f'Посилання веде на текст нормативного акта, а не на окремий файл. Бланк — {e(x["where"])}.' if x.get('act')
+            else ' · '.join(filter(None, [', '.join(filter(None, [x.get('fmt'), x.get('size')])), 'файл із сайту ' + e(x['host'])])))
+    return ((f'<p class="form-who">{e(x["who"])}:</p>' if x.get('who') else '')
+            + f'<div class="form-item"><span class="form-tag{" warn" if x.get("official") is False else ""}">{tag}</span><b>{e(x["title"])}</b>'
+            + f'<a class="btn ghost sm-btn" href="{e(x["url"])}" target="_blank" rel="noopener noreferrer">{btn}</a>'
+            + f'<small>{meta}</small><small>Форму затверджено: {_a(x["srcUrl"], e(x["src"]))} · перевірено {e(x["checkedText"])}</small></div>')
+
+
+def _forms_static(j):
+    """Бланк заяви: чи потрібно заповнювати, який бланк узяти, що робити далі (дані з forms.py)."""
+    f = j['forms']
+    if f.get('noBlank'):
+        return f'<div class="j-forms"><h2 id="forms">Бланк заяви</h2><p><b>Чи потрібно заповнювати?</b> {e(f["noBlank"])}</p></div>'
+    bl, ex = f.get('blanks', []), f.get('examples', [])
+    many = len(bl) > 1
+    chs = {c['id']: c for c in j['channels']}
+    on = chs.get('online') if (chs.get('online') or {}).get('url') else None
+    paper = [_PAPER_HOW[c] for c in chs if c in _PAPER_HOW]
+    need = 'Так, якщо подаєте заяву на папері: її заповнюють за офіційною формою.'
+    if on: need += ' Якщо подаєте онлайн, бланк не потрібен — заяву заповните на сайті (' + _a(on['url'], 'подати заяву онлайн') + ').'
+    elif 'app' in chs: need += ' Якщо подаєте через застосунок, бланк не потрібен — заяву заповните в застосунку.'
+    out = [f'<h2 id="forms">{"Бланки заяви" if many else "Бланк заяви"}</h2>', f'<p><b>Чи потрібно заповнювати?</b> {need}</p>']
+    if many: out.append('<p><b>Який бланк узяти?</b> Це залежить від вашої ситуації:</p>')
+    out += [_form_card(x, 'blank') for x in bl] + [_form_card(x, 'example') for x in ex]
+    out.append('<p><b>Що робити після заповнення?</b> Перевірте дані й подайте заяву ' + (' або '.join(paper) if paper else 'в установу')
+               + ' разом з іншими документами зі списку вище.</p>')
+    if f.get('tips'):
+        out.append('<div class="form-tips"><b>Порада від «Як?»</b> <span class="muted">— наше пояснення, не офіційний документ</span><ul>'
+                   + ''.join(f'<li>{e(t)}</li>' for t in f['tips']) + '</ul></div>')
+    if f.get('note'): out.append(f'<p class="muted">{e(f["note"])}</p>')
+    return '<div class="j-forms">' + ''.join(out) + '</div>'
+
+
 def render_static(j, lead=''):
     parts = []
     if j.get('ed'):
@@ -626,6 +672,7 @@ def render_static(j, lead=''):
             + (f'<small class="cond">{e(d["form"])}</small>' if d.get('form') else '')
             + (f'<small class="cond">{e(d.get("condText") or d["cond"])}</small>' if d['cond'] else '')
             + ('<small class="cond">Потрібен, якщо заяву подає представник.</small>' if d['rep'] and not d['cond'] else '') + '</li>' for d in j['docs']) + '</ul>')
+    if j.get('forms'): ref.append(_forms_static(j))
     if any(j['steps'].get(c['id']) for c in j['channels']):
         ref.append('<h2>Як отримати послугу</h2>')
     for c in j['channels']:

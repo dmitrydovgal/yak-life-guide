@@ -146,6 +146,38 @@
       (f.hidden ? '<p class="muted">Ще ' + f.hidden + ' ' + plural(f.hidden, 'документ', 'документи', 'документів') + ' у вашій ситуації не ' + plural(f.hidden, 'потрібен', 'потрібні', 'потрібні') + ', тому ми ' + plural(f.hidden, 'його', 'їх', 'їх') + ' сховали.</p>' : '') + '</section>';
   }
 
+  /* Бланк заяви: лише підтверджені офіційні матеріали (J.forms з _build/forms.py); немає даних — немає блоку.
+     Відповідає на три питання: чи потрібно заповнювати, який бланк узяти, що робити далі. */
+  var PAPER_HOW = { office: 'в установі особисто', mail: 'поштою', email: 'електронною поштою' };
+  function formCard(x, kind) {
+    var tag = kind === 'blank' ? 'Офіційний бланк' : x.official === false ? 'Неофіційний приклад — перевірте актуальність' : 'Офіційний приклад заповнення';
+    var btn = x.act ? 'Відкрити акт із бланком' : kind === 'blank' ? 'Завантажити порожній бланк' : 'Переглянути приклад заповнення';
+    var meta = x.act ? 'Посилання веде на текст нормативного акта, а не на окремий файл. Бланк — ' + esc(x.where) + '.' :
+      [[x.fmt, x.size].filter(Boolean).join(', '), 'файл із сайту ' + esc(x.host)].filter(Boolean).join(' · ');
+    return '<div class="form-item"><span class="form-tag' + (x.official === false ? ' warn' : '') + '">' + tag + '</span><b>' + esc(x.title) + '</b>' +
+      '<a class="btn ghost sm-btn" href="' + esc(x.url) + '" target="_blank" rel="noopener noreferrer">' + btn + '</a>' +
+      '<small>' + meta + '</small><small>Форму затверджено: <a href="' + esc(x.srcUrl) + '" target="_blank" rel="noopener noreferrer">' + esc(x.src) + '</a> · перевірено ' + esc(x.checkedText) + '</small></div>';
+  }
+  function formsHtml() {
+    var f = J.forms; if (!f) return '';
+    if (f.noBlank) return '<section class="j-sec j-forms"><h3>Бланк заяви</h3><p><b>Чи потрібно заповнювати?</b> ' + esc(f.noBlank) + '</p></section>';
+    var bl = f.blanks || [], ex = f.examples || [], c = channel(), many = bl.length > 1;
+    var cards = bl.map(function (x) { return (x.who ? '<p class="form-who">' + esc(x.who) + ':</p>' : '') + formCard(x, 'blank'); }).join('') +
+      ex.map(function (x) { return formCard(x, 'example'); }).join('');
+    var tips = (f.tips || []).length ? '<div class="form-tips"><b>Порада від «Як?»</b> <span class="muted">— наше пояснення, не офіційний документ</span><ul>' + f.tips.map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('') + '</ul></div>' : '';
+    var note = f.note ? '<p class="muted">' + esc(f.note) + '</p>' : '';
+    /* Онлайн чи застосунок: паперовий бланк не потрібен — коротко, файли під спойлером */
+    if (c && (c.id === 'online' || c.id === 'app'))
+      return '<section class="j-sec j-forms"><h3>Бланк заяви</h3><p><b>Паперовий бланк не потрібен.</b> Ви подаєте ' + (c.id === 'app' ? 'через застосунок, тому заяву заповните в застосунку.' : 'онлайн, тому заяву заповните на сайті.') +
+        (c.id === 'online' && c.url ? ' <a href="' + esc(c.url) + '" target="_blank" rel="noopener noreferrer">Подати заяву онлайн</a>' : '') + '</p>' +
+        '<details class="j-more"><summary>Усе ж потрібен паперовий бланк?</summary>' + cards + tips + note + '</details></section>';
+    var how = c && PAPER_HOW[c.id] ? PAPER_HOW[c.id] : 'обраним способом';
+    return '<section class="j-sec j-forms" id="j-forms"><h3>' + (many ? 'Бланки заяви' : 'Бланк заяви') + '</h3>' +
+      '<p><b>Чи потрібно заповнювати?</b> Так, заява подається за офіційною формою. Бланк можна роздрукувати й заповнити заздалегідь.</p>' +
+      (many ? '<p><b>Який бланк узяти?</b> Це залежить від вашої ситуації:</p>' : '') + cards +
+      '<p><b>Що робити після заповнення?</b> Перевірте дані й подайте заяву ' + how + ' разом з іншими документами зі списку вище.</p>' + tips + note + '</section>';
+  }
+
   function stepsHtml() {
     var c = channel();
     var ed = J.ed && J.ed.online;
@@ -209,7 +241,7 @@
     var head = '<div class="j-head"><div><b>Ваш покроковий план</b><span class="muted">' + (nq ? 'Дайте відповідь на ' + nq + ' ' + plural(nq, 'питання', 'питання', 'питань') + ' — і ми покажемо, що робити саме вам.' : 'Відмічайте документи, які вже готові. Позначки збережуться на цьому пристрої.') + '</span></div>' +
       '<div class="j-bar" role="progressbar" aria-valuenow="' + p.pct + '" aria-valuemin="0" aria-valuemax="100" aria-label="Готовність"><i style="width:' + p.pct + '%"></i></div><span class="j-pct">' + p.pct + '%</span></div>';
     var html = head + fitHtml() + J.questions.map(qHtml).join('');
-    if (!pend.length && eligible()) html += recHtml() + (stopped() ? '' : docsHtml() + stepsHtml() + resultHtml());
+    if (!pend.length && eligible()) html += recHtml() + (stopped() ? '' : docsHtml() + formsHtml() + stepsHtml() + resultHtml());
     else if (pend.length) html += '<p class="muted j-wait">Коли ви відповісте' + (pend.length > 1 ? ' на всі питання' : '') + ', тут з’явиться ваш план: документи, кроки й результат.</p>';
     html += '<div class="j-actions"><button type="button" class="btn ghost" data-act="save">' + (saved ? 'Збережено ✓' : 'Зберегти план') + '</button>' +
       (!pend.length ? '<button type="button" class="btn ghost" data-act="copy">Копіювати план</button><button type="button" class="btn ghost" data-act="print">Друкувати</button>' : '') +
