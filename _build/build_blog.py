@@ -7,6 +7,19 @@ from articles import ARTICLES, SRC, DATE
 SITE = 'https://yak-life-guide.dmitriy-dovgal28.workers.dev/'
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 e = html.escape
+# Google Tag Manager: один контейнер для всіх згенерованих сторінок (головна index.html містить той самий код вручну)
+GTM_ID = 'GTM-W2CXSFN8'
+GTM_HEAD = ('<!-- Google Tag Manager -->\n'
+            "<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':\n"
+            "new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],\n"
+            "j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=\n"
+            "'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);\n"
+            f"}})(window,document,'script','dataLayer','{GTM_ID}');</script>\n"
+            '<!-- End Google Tag Manager -->')
+GTM_BODY = ('<!-- Google Tag Manager (noscript) -->\n'
+            f'<noscript><iframe src="https://www.googletagmanager.com/ns.html?id={GTM_ID}"\n'
+            'height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>\n'
+            '<!-- End Google Tag Manager (noscript) -->')
 BY_SLUG = {a['slug']: a for a in ARTICLES}
 MONTHS = ['січня', 'лютого', 'березня', 'квітня', 'травня', 'червня', 'липня', 'серпня', 'вересня', 'жовтня', 'листопада', 'грудня']
 def human(d):
@@ -24,6 +37,7 @@ def page(depth, title, desc, canonical, body, extra_head='', og_type='website', 
     return f'''<!DOCTYPE html>
 <html lang="uk">
 <head>
+{GTM_HEAD}
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{e(title)}</title>
@@ -49,6 +63,7 @@ def page(depth, title, desc, canonical, body, extra_head='', og_type='website', 
 {extra_head}
 </head>
 <body>
+{GTM_BODY}
 <header class="header" id="header"><div class="container bar-row">
 <a class="logo" href="{r or './'}" aria-label="Як? — на головну"><span class="logo-t">Як</span><span class="logo-q">?</span></a>
 <nav class="nav" id="nav" aria-label="Головне меню">{nav_html}</nav>
@@ -203,6 +218,6 @@ from urllib.parse import urlparse
 _nf = page(0, 'Сторінку не знайдено — Як?', 'Такої сторінки немає. Скористайтеся пошуком або оберіть розділ.', SITE,
            '<div class="container narrow-m post"><h1>Сторінку не знайдено</h1><p class="post-lead">Можливо, посилання застаріло. Перейдіть на головну, відкрийте блог або оберіть потрібну тему.</p>'
            '<p><a class="btn primary" href="./">На головну</a> <a class="btn ghost" href="blog/">Блог</a> <a class="btn ghost" href="i/">Усі теми</a></p></div>')
-_nf = _nf.replace(f'<link rel="canonical" href="{SITE}">' + chr(10), '').replace('<head>', '<head>' + chr(10) + f'<base href="{urlparse(SITE).path}">' + chr(10) + '<meta name="robots" content="noindex">', 1)
+_nf = _nf.replace(f'<link rel="canonical" href="{SITE}">' + chr(10), '').replace('<head>' + chr(10) + GTM_HEAD, '<head>' + chr(10) + GTM_HEAD + chr(10) + f'<base href="{urlparse(SITE).path}">' + chr(10) + '<meta name="robots" content="noindex">', 1)
 write('404.html', _nf)
 print(len(ARTICLES), 'articles,', len(urls), 'urls')
