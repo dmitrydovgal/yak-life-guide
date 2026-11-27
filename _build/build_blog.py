@@ -75,7 +75,7 @@ def page(depth, title, desc, canonical, body, extra_head='', og_type='website', 
 <button class="burger" id="burger" type="button" aria-label="Меню" aria-expanded="false" aria-controls="nav">{menu}</button>
 </div></header>
 <main>{body}</main>
-<footer class="footer"><div class="container foot-row"><span>Як? — незалежний інформаційний гід, не державний портал. Матеріали не є юридичною консультацією.</span><span class="foot-links"><a href="{r}blog/" >Блог</a><a href="{r}i/">Усі теми</a><a href="{r}e/">Життєві події</a><a href="{r}documents/">Документи</a><a href="{r}glossary/">Глосарій</a><a href="{r}about/">Про проєкт</a></span></div></footer>
+<footer class="footer"><div class="container foot-row"><span>Як? — незалежний інформаційний гід, не державний портал. Матеріали не є юридичною консультацією.</span><span class="foot-links"><a href="{r}blog/" >Блог</a><a href="{r}i/">Усі теми</a><a href="{r}e/">Життєві події</a><a href="{r}documents/">Документи</a><a href="{r}glossary/">Глосарій</a><a href="{r}local/">Місцеві сервіси</a><a href="{r}about/">Про проєкт</a></span></div></footer>
 <script>document.getElementById('burger').onclick=function(){{var h=document.getElementById('header'),o=h.classList.toggle('open');this.setAttribute('aria-expanded',o)}}</script>
 </body>
 </html>
@@ -103,6 +103,10 @@ def cta_href(cid):
     if not v: return 'i/' + cid
     return {'c': 'c/', 'e': 'e/', 'i': 'i/'}.get(k, '') + v if k != 's' else f's/{v}/-'
 
+# Статті про комуналку, де доречний блок «Місцевий сервіс у вашому місті» (local/widget.js) і яка дія потрібна читачу.
+LOCAL_ACT = {'yak-oplatyty-komunalku-online': 'pay', 'peredaty-pokaznyky-lichylnykiv': 'readings',
+             'borh-za-komunalku': 'debt', 'yak-znayty-postachalnyka-komunalnyh-poslug': ''}
+
 def article_page(a):
     depth = 2
     url = f'{SITE}blog/{a["slug"]}/'
@@ -115,6 +119,11 @@ def article_page(a):
     src_html = ('<h2 id="sources">Офіційні та корисні джерела</h2><ul>' if srcs else '') + ''.join((f'<li>{e(l)}: <a href="{u}" target="_blank" rel="noopener noreferrer">{e(u)}</a></li>' if u else f'<li>{e(l)}</li>') for l, u in srcs) + ('</ul>' if srcs else '')
     cta_id, cta_text, cta_btn = (a['cta'] + (None,))[:3] if len(a['cta']) == 3 else (a['cta'][0], 'Відповімо на кілька запитань і покажемо кроки саме для вас.', a['cta'][1])
     cta = f'<aside class="cta-box"><b>Покрокова інструкція під вашу ситуацію</b><p>{e(cta_text)}</p><a class="btn primary" href="../../#/{cta_href(cta_id)}">{e(cta_btn)}</a></aside>'
+    local_html = ''
+    if a['slug'] in LOCAL_ACT:
+        local_html = (f'<section class="local-pick" data-act="{LOCAL_ACT[a["slug"]]}" data-base="../../"><h2 class="lp-h">Місцевий сервіс у вашому місті</h2>'
+                      '<p class="lp-all"><a href="../../local/">Перевірені місцеві сервіси за містами →</a></p></section>'
+                      '<script src="../../local/widget.js" defer></script>\n')
     int_html = ''
     if a.get('internal'):
         int_html = '<h2 id="related">Читайте також</h2><ul class="related">' + ''.join(f'<li><a href="{u}">{e(t)}</a></li>' for t, u in a['internal']) + '</ul>'
@@ -135,7 +144,7 @@ def article_page(a):
 {short_html}
 {toc_html}
 <div>{body_html}</div>
-{cta}
+{local_html}{cta}
 {faq_html}
 {src_html}
 {int_html}

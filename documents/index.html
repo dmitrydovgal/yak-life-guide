@@ -80,7 +80,7 @@ function reset(){q.value='';[].forEach.call(document.querySelectorAll('.frow inp
 q.addEventListener('input',run);[].forEach.call(document.querySelectorAll('.frow input'),function(i){i.addEventListener('change',run)});
 document.getElementById('dsort').addEventListener('change',sort);document.getElementById('freset').addEventListener('click',reset);document.getElementById('freset2').addEventListener('click',reset);
 var p=new URLSearchParams(location.search).get('q');if(p)q.value=p;run()})();</script></main>
-<footer class="footer"><div class="container foot-row"><span>Як? — незалежний інформаційний гід, не державний портал. Матеріали не є юридичною консультацією.</span><span class="foot-links"><a href="../blog/" >Блог</a><a href="../i/">Усі теми</a><a href="../e/">Життєві події</a><a href="../documents/">Документи</a><a href="../glossary/">Глосарій</a><a href="../about/">Про проєкт</a></span></div></footer>
+<footer class="footer"><div class="container foot-row"><span>Як? — незалежний інформаційний гід, не державний портал. Матеріали не є юридичною консультацією.</span><span class="foot-links"><a href="../blog/" >Блог</a><a href="../i/">Усі теми</a><a href="../e/">Життєві події</a><a href="../documents/">Документи</a><a href="../glossary/">Глосарій</a><a href="../local/">Місцеві сервіси</a><a href="../about/">Про проєкт</a></span></div></footer>
 <script>document.getElementById('burger').onclick=function(){var h=document.getElementById('header'),o=h.classList.toggle('open');this.setAttribute('aria-expanded',o)}</script>
 </body>
 </html>

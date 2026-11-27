@@ -63,7 +63,7 @@ empty.hidden=n>0;cnt.textContent=n===cards.length&&!t.length&&!cat?'':'Знай�
 q.addEventListener('input',run);document.getElementById('bform').addEventListener('submit',function(e){e.preventDefault();run()});
 document.getElementById('bclear').addEventListener('click',function(){q.value='';cat='';chips.forEach(function(c){c.classList.toggle('on',!c.getAttribute('data-cat'))});run();q.focus()});
 chips.forEach(function(b){b.addEventListener('click',function(){cat=b.getAttribute('data-cat');chips.forEach(function(c){c.classList.toggle('on',c===b)});run()})})})();</script></main>
-<footer class="footer"><div class="container foot-row"><span>Як? — незалежний інформаційний гід, не державний портал. Матеріали не є юридичною консультацією.</span><span class="foot-links"><a href="../blog/" >Блог</a><a href="../i/">Усі теми</a><a href="../e/">Життєві події</a><a href="../documents/">Документи</a><a href="../glossary/">Глосарій</a><a href="../about/">Про проєкт</a></span></div></footer>
+<footer class="footer"><div class="container foot-row"><span>Як? — незалежний інформаційний гід, не державний портал. Матеріали не є юридичною консультацією.</span><span class="foot-links"><a href="../blog/" >Блог</a><a href="../i/">Усі теми</a><a href="../e/">Життєві події</a><a href="../documents/">Документи</a><a href="../glossary/">Глосарій</a><a href="../local/">Місцеві сервіси</a><a href="../about/">Про проєкт</a></span></div></footer>
 <script>document.getElementById('burger').onclick=function(){var h=document.getElementById('header'),o=h.classList.toggle('open');this.setAttribute('aria-expanded',o)}</script>
 </body>
 </html>

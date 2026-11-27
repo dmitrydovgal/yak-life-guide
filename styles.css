@@ -571,3 +571,47 @@ a.kp:hover i{background:#d2e3fc}
 @media (max-width:600px){.az a,.az span{min-width:32px;height:32px;font-size:15px!important}.az{top:56px}}
 .frow.zero{opacity:.45}
 @media (max-width:600px){.az ul{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px!important}.az li{flex:none}.az-group{scroll-margin-top:110px}}
+
+/* ---- Місцеві сервіси (/local/ і блок у статтях) ---- */
+.lhow-check{border:1px solid var(--bd);border-radius:14px;padding:14px 16px;margin:0 0 24px;display:grid;gap:8px;font-size:15px;max-width:860px}
+.lhow-check .muted{font-size:14px}
+.lst{display:inline-block;font-size:13px;line-height:1.4;padding:3px 10px;border-radius:999px;font-weight:600}
+.lst-ok{background:#e3f4e8;color:#1d6b35}
+.lst-part{background:#fff4d6;color:#7a5200}
+.lown{display:inline-block;font-size:13px;line-height:1.4;padding:3px 10px;border-radius:999px;background:var(--lt);color:var(--tx2)}
+.lk-payment{background:#fde8e7;color:#a3261f}
+.lk-network{background:#f1ecfb;color:#5b3aa6}
+.lsel{font:inherit;font-size:16px;width:100%;height:46px;border:1px solid var(--bd);border-radius:10px;padding:0 10px;background:#fff;color:var(--tx);margin:0 0 16px}
+.lcards,.lminis{list-style:none;padding:0;margin:0 0 20px;display:grid;gap:14px}
+.lcard,.lmini{border:1px solid var(--bd);border-radius:14px;padding:18px;background:#fff}
+.lcard.lc-payment,.lmini.lc-payment{border-style:dashed;background:var(--lt)}
+.lcard.lflash{box-shadow:0 0 0 3px var(--blh);border-color:var(--bl)}
+.lcard{scroll-margin-top:84px}
+.lcity-box{border:1px solid var(--bl);border-radius:14px;padding:14px 16px 2px;margin:0 0 12px;background:#fafcff}
+.lcard-top{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.lcard-title,.lmini h3{font-size:20px;margin:0 0 4px}
+.lcity{color:var(--tx2);font-size:15px;margin:0 0 10px}
+.lscope,.llim,.lunk,.lnone,.lprov,.lwhy{font-size:15px;margin:8px 0 0}
+.lscope,.llim{background:#fffbf0;border-radius:8px;padding:8px 12px;color:#5f4b00}
+.lunk,.lnone,.lprov{color:var(--tx2)}
+.lacts{list-style:none;padding:0;margin:8px 0 0;display:flex;flex-wrap:wrap;gap:6px 14px}
+.lacts li{font-size:15px;padding-left:22px;position:relative}
+.lacts li::before{content:'';position:absolute;left:2px;top:4px;width:12px;height:7px;border-left:2px solid var(--ok);border-bottom:2px solid var(--ok);transform:rotate(-45deg)}
+.lacts li.hit{font-weight:600}
+.lhow{margin-top:10px}
+.lhow summary{cursor:pointer;color:var(--bl);font-size:15px}
+.lhow ol{margin:8px 0 0;padding-left:22px;font-size:15px}
+.lcard-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.lsrc-box{margin-top:14px;padding-top:10px;border-top:1px solid var(--bd);font-size:13px;color:var(--tx2)}
+.lsrc{margin:4px 0 0;padding-left:18px}
+.lsrc a{word-break:break-all}
+.local-pick{border:1px solid var(--bl);border-radius:14px;padding:18px;margin:28px 0;background:#fafcff}
+.local-pick[hidden]{display:none}
+.lp-h{font-size:20px;margin:0 0 6px}
+.lp-lead{color:var(--tx2);font-size:15px;margin:0 0 12px}
+.local-pick .lsel{max-width:360px}
+.lpay-note{font-size:14px;color:var(--tx2);margin:4px 0 8px}
+.lmini-foot{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin:12px 0 0}
+.lmini-foot small{color:var(--tx2);font-size:13px}
+.lp-all{margin:6px 0 0;font-size:15px}
+@media (max-width:600px){.lcard,.lmini,.local-pick{padding:14px}.lcard-actions .btn,.lmini-foot .btn{width:100%}}

@@ -66,7 +66,7 @@ q.addEventListener('input',function(){var s=n(q.value).split(' ').filter(Boolean
 [].forEach.call(g.querySelectorAll('.gl-item'),function(it){var ok=s.every(function(w){return it.dataset.q.indexOf(w)>-1});it.hidden=!ok;if(ok)m++});
 g.hidden=!m;k+=m;var a=document.querySelector('.az a[href="#'+g.id+'"]');if(a)a.classList.toggle('off',!m)});
 document.getElementById('gcount').textContent='Термінів: '+k;document.getElementById('gempty').hidden=k>0})})();</script></main>
-<footer class="footer"><div class="container foot-row"><span>Як? — незалежний інформаційний гід, не державний портал. Матеріали не є юридичною консультацією.</span><span class="foot-links"><a href="../blog/" >Блог</a><a href="../i/">Усі теми</a><a href="../e/">Життєві події</a><a href="../documents/">Документи</a><a href="../glossary/">Глосарій</a><a href="../about/">Про проєкт</a></span></div></footer>
+<footer class="footer"><div class="container foot-row"><span>Як? — незалежний інформаційний гід, не державний портал. Матеріали не є юридичною консультацією.</span><span class="foot-links"><a href="../blog/" >Блог</a><a href="../i/">Усі теми</a><a href="../e/">Життєві події</a><a href="../documents/">Документи</a><a href="../glossary/">Глосарій</a><a href="../local/">Місцеві сервіси</a><a href="../about/">Про проєкт</a></span></div></footer>
 <script>document.getElementById('burger').onclick=function(){var h=document.getElementById('header'),o=h.classList.toggle('open');this.setAttribute('aria-expanded',o)}</script>
 </body>
 </html>

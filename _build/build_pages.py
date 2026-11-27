@@ -186,6 +186,10 @@ def service_page(sid):
 import sections   # розділи «Документи» і «Глосарій» (дані: docs_db.py, glossary.py)
 sections.init(page=page, write=write, e=e, SITE=SITE, crumbs=crumbs, bc_ld=bc_ld, ld_script=ld_script, cut=cut,
               svc_url=svc_url, svc_title=svc_title, REG=REG, FOOT=FOOT, URLS=URLS)
+import local_section   # розділ «Місцеві сервіси» (дані: local_services.py)
+local_section.init(page=page, write=write, e=e, SITE=SITE, crumbs=crumbs, bc_ld=bc_ld, ld_script=ld_script, cut=cut,
+                   URLS=URLS, search_box=sections._search_box)
+sections._ctx['extra_search'] = local_section.search_entries
 
 for sid in svc_url:
     write(svc_url[sid] + 'index.html', service_page(sid)); URLS.append(SITE + svc_url[sid])
@@ -362,6 +366,8 @@ write('about/index.html', about_page()); URLS.append(SITE + 'about/')
 
 # ---------- sitemap ----------
 _nd, _nt = sections.build()
+_nl = local_section.build()
+print(f'local services: {_nl}')
 print(f'documents: {_nd} pages; glossary: {_nt} terms')
 seen = []; [seen.append(u) for u in URLS if u not in seen]
 write('sitemap.xml', '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' + ''.join(f'<url><loc>{u}</loc>{_lm(u)}</url>\n' for u in seen) + '</urlset>\n')

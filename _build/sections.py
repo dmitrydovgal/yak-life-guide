@@ -299,9 +299,10 @@ document.getElementById('gcount').textContent='Термінів: '+k;document.ge
 
 
 def search_index():
-    """documents/search.json — для загального пошуку на головній (app.js)."""
+    """documents/search.json — для загального пошуку на головній (app.js): документи, терміни, місцеві сервіси."""
     out = [{'k': 'doc', 't': D.DOCS[i]['title'], 'a': ' '.join(D.DOCS[i].get('aka', [])), 'u': f'documents/{i}/', 'd': _c('cut')(D.DOCS[i]['plain'], 120)} for i in DOC_PAGES]
     out += [{'k': 'term', 't': t['term'], 'a': ' '.join(t.get('aka', [])), 'u': f'glossary/{t["slug"]}/', 'd': _c('cut')(t['plain'], 120)} for t in G.TERMS]
+    out += _ctx.get('extra_search', list)()   # місцеві сервіси (local_section.py)
     return json.dumps(out, ensure_ascii=False)
 
 

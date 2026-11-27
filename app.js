@@ -249,7 +249,7 @@
     lucide.createIcons(); refreshSaveUI();
   }
 
-  /* Документи й терміни глосарію: documents/search.json (будує _build/sections.py) */
+  /* Документи, терміни глосарію й місцеві сервіси: documents/search.json (будують _build/sections.py і local_section.py) */
   let docIdx = null;
   async function searchDocs(q) {
     if (!docIdx) docIdx = await fetch('documents/search.json').then(r => r.ok ? r.json() : []);
@@ -268,7 +268,9 @@
     $('#sres2').innerHTML = `<p class="muted mt">Шукаємо в реєстрі державних послуг…</p>`;
     lucide.createIcons(); refreshSaveUI();
     searchDocs(q).then(dl => { if (tok !== routeTok || !dl.length) return;
-      $('#sres3').innerHTML = `<h2 class="h2 sub">Документи та терміни</h2><ul class="rows">${dl.slice(0, 8).map(x => `<li class="row-wrap"><a class="row" href="${esc(x.u)}"><span class="row-main"><span class="row-title">${esc(x.t)}</span><span class="row-meta">${x.k === 'doc' ? 'Документ' : 'Глосарій'} · ${esc(x.d)}</span></span>${ic('chevron-right', 'chev')}</a></li>`).join('')}</ul>`;
+      const row = x => `<li class="row-wrap"><a class="row" href="${esc(x.u)}"><span class="row-main"><span class="row-title">${esc(x.t)}</span><span class="row-meta">${x.k === 'doc' ? 'Документ' : x.k === 'local' ? 'Місцевий сервіс' : 'Глосарій'} · ${esc(x.d)}</span></span>${ic('chevron-right', 'chev')}</a></li>`;
+      const lo = dl.filter(x => x.k === 'local'), dt = dl.filter(x => x.k !== 'local');
+      $('#sres3').innerHTML = (lo.length ? `<h2 class="h2 sub">Місцеві сервіси</h2><ul class="rows">${lo.slice(0, 6).map(row).join('')}</ul>` : '') + (dt.length ? `<h2 class="h2 sub">Документи та терміни</h2><ul class="rows">${dt.slice(0, 8).map(row).join('')}</ul>` : '');
       lucide.createIcons(); }).catch(() => {});
     loadGuide().then(() => {
       if (tok !== routeTok) return;
@@ -618,6 +620,10 @@
     return { m, place, addr, choice, steps: [].concat(place ? ['place'] : [], addr ? ['addr'] : [], choice ? ['choice'] : [], ['result']) };
   }
 
+  /* Блок «Місцевий сервіс у вашому місті» (local/widget.js): лише в інструкціях про комуналку, з потрібною дією. */
+  const LOCAL_INS = { meters: 'readings', 'utilities-debt': 'debt', 'provider-find': '' };
+  const mountLocal = () => { if (window.YakLocal) $$('.local-pick').forEach(el => window.YakLocal.mount(el)); };
+
   function pageInstruction(id, a2) {
     const base0 = INS[id]; if (!base0) return page404();
     if (id === 'fop-group' || id === 'fop-open') { location.replace(new URL('i/' + id + '/', location.href.split('#')[0]).href); return; } /* глибокий сценарій зі статичної сторінки */
@@ -670,6 +676,7 @@
       <h2 class="h2 sub">Покрокова інструкція</h2>
       <ol class="osteps">${all.map((x, i) => `<li class="ostep"><span class="num">${i + 1}</span><div class="body"><b>${esc(x.t)}</b><span>${esc(x.d)}</span>${x.actions ? `<div class="oact">${x.actions.map(a => extLink(a.label, a.href, 'btn ghost sm-btn')).join('')}</div>` : ''}</div></li>`).join('')}</ol>
       ${cta ? `<div class="cta-row">${cta}</div>` : ''}
+      ${id in LOCAL_INS ? `<section class="local-pick" data-act="${LOCAL_INS[id]}" data-base="" data-city="${esc(city)}"></section>` : ''}
       <div class="note neutral">${ic('info')}<p>Подача документів відбувається в органі або на сайті сервісу, а не на «Як?». Тут лише підказки.</p></div>
       <section class="sum"><div class="h2-row"><h2 class="h2">Дані для заяви</h2></div><pre id="sumtxt">${esc(summary)}</pre>
         <div class="oact"><button class="btn ghost" id="copy" type="button">${ic('copy')} Копіювати</button><button class="btn ghost" id="print" type="button">${ic('printer')} Друкувати</button></div></section>
@@ -679,6 +686,7 @@
       ${demoNote}
       <p class="checked">${ic('calendar-check')} Дата оновлення інформації: ${CHECKED}</p>
       <div class="actions"><a class="btn ghost" href="${backHref}">${ic('arrow-left')} Назад</a><a class="btn ghost" href="#/c/${cat.id}">До розділу «${esc(cat.title)}»</a></div>`);
+    mountLocal();
     $('#copy').addEventListener('click', () => {
       const t = $('#sumtxt').textContent;
       (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => toast('Дані скопійовано', 'ok'), () => { const r = document.createRange(); r.selectNodeContents($('#sumtxt')); const sl = getSelection(); sl.removeAllRanges(); sl.addRange(r); toast('Виділено. Натисніть Ctrl+C'); });
@@ -788,6 +796,7 @@
       <h1>Оберіть найпростіший спосіб оплати</h1><p class="lead">Ми підібрали доступні варіанти для вашого міста та адреси.</p>
       <div class="addr">${ic('map-pin')}<span>${esc(addrLine(st))}</span><a href="#/k/2">Змінити</a></div></div>
       <div class="note">${ic('info')}<p><b>Орієнтовний підбір.</b> Результати не є перевіркою в реальному часі постачальників, і ми не стверджуємо, що кожен сервіс підтримує всі рахунки за вашою адресою.</p></div>
+      <section class="local-pick" data-act="pay" data-base="" data-city="${esc(st.city)}" data-fixed="1" data-quiet="1"></section>
       <div class="svc-list">${order.map(s => `<section class="svc${s === order[0] ? ' rec' : ''}">
         ${s === order[0] ? '<span class="tag">Найпростіший варіант</span>' : ''}
         <div class="svc-head"><span class="svc-ic">${ic(s.icon)}</span><h2>${s.name}</h2></div>
@@ -804,6 +813,15 @@
           : empty('Місцевих постачальників не знайдено', `Для міста ${st.city} у нас поки немає даних. Скористайтеся сервісами вище або знайдіть постачальника за квитанцією.`, `<a class="btn ghost" href="#/i/provider-find">Як знайти свого постачальника?</a>`)}
       </section>
       <div class="actions"><a class="btn ghost" href="#/k/2">${ic('arrow-left')} Назад</a></div></div>`;
+    /* Місцеві сервіси міста (якщо є перевірені) — над загальними способами; з прикладів постачальників прибираємо ті, що вже показані карткою. */
+    const lp = $('.local-pick');
+    if (lp) lp.addEventListener('yaklocal:drawn', e => {
+      const names = e.detail.names.map(n => n.toLowerCase());
+      $$('.prov b').forEach(b => { if (names.some(n => n.includes(b.textContent.toLowerCase()))) b.closest('.prov').hidden = true; });
+      const left = $$('.prov').filter(x => !x.hidden).length, sec = $('section.local');
+      if (sec && $$('.prov').length && !left) sec.hidden = true;
+    });
+    mountLocal();
   }
 
   function kStep4(st, sid) {
