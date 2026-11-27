@@ -60,6 +60,11 @@ def page(depth, title, desc, canonical, body, extra_head='', og_type='website', 
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&subset=cyrillic&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="{r}styles.css">
+<link rel="icon" href="{r}favicon.ico" sizes="48x48">
+<link rel="icon" type="image/png" sizes="32x32" href="{r}favicon-32.png">
+<link rel="apple-touch-icon" href="{r}apple-touch-icon.png">
+<link rel="manifest" href="{r}site.webmanifest">
+<meta name="theme-color" content="#1A73E8">
 {extra_head}
 </head>
 <body>
